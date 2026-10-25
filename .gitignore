@@ -51,3 +51,5 @@ Thumbs.db
 *.db-shm
 *.sqlite
 scratch/
+raw_indian_recipes.csv
+!recipes.db.gz

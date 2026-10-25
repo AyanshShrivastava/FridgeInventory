@@ -2492,6 +2492,18 @@ def generate_rescue_recipe(items: List[str]) -> RescueRecipe:
                 chef_tip=f"Enjoy fresh {en_name} as is, or blend it into drinks or desserts!",
                 chef_tip_hi=f"{hi_name} का ताज़ा आनंद लें या इससे शेक, लस्सी या मिठाई बनाएँ!"
             )
+        # 0.5 Instant match from local database of 5,800+ authentic Indian recipes
+        try:
+            from recipe_database import search_recipe_by_dish
+            db_recipe = search_recipe_by_dish(target_dish)
+            if db_recipe:
+                logger.info(f"Instant match found in recipe database for dish '{target_dish}': '{db_recipe['recipe_name']}'")
+                rec_obj = RescueRecipe(**db_recipe)
+                rec_obj.corrected_ingredients = [target_dish]
+                return rec_obj
+        except Exception as db_err:
+            logger.warning(f"Local recipe database lookup failed: {db_err}")
+
         # 1. Primary: Cascade through ALL Groq models for how-to recipe
         groq_client = get_groq_client()
         if groq_client is not None:
@@ -2569,6 +2581,18 @@ def generate_rescue_recipe(items: List[str]) -> RescueRecipe:
 
     # 1. Automatic culinary spelling and typo correction
     clean_items, corrections = correct_ingredients_list(raw_clean)
+
+    # 1.5 Match authentic recipe from local 5,800+ Indian recipe database
+    try:
+        from recipe_database import search_recipe_by_ingredients
+        matched_recipe = search_recipe_by_ingredients(clean_items)
+        if matched_recipe:
+            logger.info(f"Matched authentic recipe from database for ingredients {clean_items}: '{matched_recipe['recipe_name']}'")
+            rec_obj = RescueRecipe(**matched_recipe)
+            rec_obj.corrected_ingredients = clean_items
+            return rec_obj
+    except Exception as db_err:
+        logger.warning(f"Ingredient recipe matching from database failed: {db_err}")
 
     # 2. Primary: Cascade through Groq LPU models for zero-waste rescue recipe
     groq_client = get_groq_client()
