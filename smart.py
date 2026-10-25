@@ -2145,6 +2145,11 @@ def detect_recipe_dish_query(items: List[str]) -> Tuple[bool, str]:
     joined = " ".join([str(i).strip() for i in items if str(i).strip()]).strip()
     if not joined:
         return False, ""
+
+    # Never interpret an inventory addition, consumption, or waste action as a recipe ask!
+    tokens = set(WORD_RE.findall(joined.lower()))
+    if tokens & (ADD_WORDS | TAKE_WORDS | WASTE_WORDS):
+        return False, ""
     
     cleaned = clean_recipe_query(joined)
     joined_clean = joined.lower()
@@ -2160,7 +2165,7 @@ def detect_recipe_dish_query(items: List[str]) -> Tuple[bool, str]:
 
     # 1. If cleaned query matches any pre-made food item (mango, milk, cheese, apple, etc.)
     _is_pre, en_p, _, _, _ = check_premade_food_item(cleaned)
-    if _is_pre:
+    if _is_pre and (has_recipe_intent or len(items) == 1):
         return True, en_p
 
     # 2. If user had explicit recipe asking intent and we have a valid dish
@@ -2179,7 +2184,7 @@ def detect_recipe_dish_query(items: List[str]) -> Tuple[bool, str]:
         "butter chicken", "chicken curry", "egg curry", "fish curry", "french fries"
     ]
     for kd in known_dishes:
-        if kd == cleaned.lower() or re.search(rf'\b{re.escape(kd)}\b', cleaned.lower()):
+        if kd == cleaned.lower():
             return True, cleaned
 
     return False, ""
@@ -3029,20 +3034,25 @@ def api_process_command(payload: CommandRequest, request: Request, fridge: Optio
             "message_hi": "फ्रिज पूरी तरह से साफ़ कर दिया गया है।",
         }
 
-    # Check if user asked 'how to make ...' or for a recipe directly in the command bar!
-    is_rec, rec_dish = detect_recipe_dish_query([raw_cmd])
-    if is_rec:
-        return {
-            "action": "recipe",
-            "dish": rec_dish or raw_cmd,
-            "message_en": f"Opening recipe for '{rec_dish or raw_cmd}'...",
-            "message_hi": f"'{rec_dish or raw_cmd}' की रेसिपी तैयार की जा रही है...",
-        }
-
     # 2. Tokenize & detect intent
     tokens = WORD_RE.findall(cmd_lower)
     if not tokens:
         raise HTTPException(status_code=400, detail="Could not understand command.")
+
+    tokset = set(tokens)
+    has_inventory_verb = bool(tokset & (ADD_WORDS | TAKE_WORDS | WASTE_WORDS))
+
+    # Check if user asked 'how to make ...' or for a recipe directly in the command bar!
+    # (Only evaluated when no inventory verbs like brought, bought, added, ate are present)
+    if not has_inventory_verb:
+        is_rec, rec_dish = detect_recipe_dish_query([raw_cmd])
+        if is_rec:
+            return {
+                "action": "recipe",
+                "dish": rec_dish or raw_cmd,
+                "message_en": f"Opening recipe for '{rec_dish or raw_cmd}'...",
+                "message_hi": f"'{rec_dish or raw_cmd}' की रेसिपी तैयार की जा रही है...",
+            }
 
     action = detect_action(tokens)
 
