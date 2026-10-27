@@ -4361,6 +4361,74 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       background-color: #ffffff;
       color: #1c1917;
     }
+    /* Filter Controls & Category Buttons (100% Crisp Visibility in Light & Dark Mode) */
+    .filter-btn {
+      background-color: #f5f5f4;
+      color: #292524;
+      border: 1px solid #e7e5e4;
+      transition: all 0.15s ease-in-out;
+    }
+    .filter-btn:hover {
+      background-color: #e7e5e4;
+      color: #0c0a09;
+    }
+    .filter-btn.active {
+      background-color: #1c1917 !important;
+      color: #ffffff !important;
+      border-color: #1c1917 !important;
+      font-weight: 700 !important;
+    }
+    html.dark .filter-btn {
+      background-color: #292524 !important;
+      color: #f5f5f4 !important;
+      border-color: #44403c !important;
+    }
+    html.dark .filter-btn:hover {
+      background-color: #383431 !important;
+      color: #ffffff !important;
+      border-color: #57534e !important;
+    }
+    html.dark .filter-btn.active {
+      background-color: #f59e0b !important;
+      color: #1c1917 !important;
+      border-color: #fbbf24 !important;
+      font-weight: 800 !important;
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.4) !important;
+    }
+    /* Live Freshness Status Banner (High Contrast in Light & Dark Mode) */
+    #sync-banner {
+      background-color: rgba(236, 253, 245, 0.9);
+      border: 1px solid rgba(167, 243, 208, 0.85);
+      color: #064e3b;
+    }
+    #sync-engine-heading {
+      color: #065f46;
+    }
+    #sync-banner-text {
+      color: #374151;
+    }
+    #sync-timestamp-display {
+      background-color: #ffffff;
+      border: 1px solid #d1d5db;
+      color: #1f2937;
+    }
+    html.dark #sync-banner {
+      background-color: #1c1917 !important;
+      border-color: #292524 !important;
+      color: #f5f5f4 !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+    }
+    html.dark #sync-engine-heading {
+      color: #34d399 !important; /* High-contrast vivid mint emerald */
+    }
+    html.dark #sync-banner-text {
+      color: #e7e5e4 !important; /* Crisp light stone-200 */
+    }
+    html.dark #sync-timestamp-display {
+      background-color: #292524 !important;
+      border-color: #44403c !important;
+      color: #f5f5f4 !important;
+    }
     @keyframes scannerLaser {
       0% { top: 3%; opacity: 0.85; }
       50% { top: 92%; opacity: 1; }
@@ -4928,27 +4996,27 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
 
         <!-- REAL-TIME TIME SYNC STATUS BANNER (COMPACT & DISMISSIBLE) -->
-        <div id="sync-banner" class="px-3.5 py-2 rounded-2xl bg-emerald-50/60 dark:bg-stone-850/80 border border-emerald-200/60 dark:border-stone-700/60 flex items-center justify-between gap-2 text-xs text-stone-600 dark:text-stone-300 transition-all shadow-2xs">
+        <div id="sync-banner" class="px-3.5 py-2.5 rounded-2xl bg-emerald-50/90 dark:bg-stone-900 border border-emerald-200/80 dark:border-stone-800 flex items-center justify-between gap-2 text-xs text-stone-700 dark:text-stone-200 transition-all shadow-2xs">
           <div class="flex items-center gap-2 min-w-0">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-            <span class="font-bold text-emerald-800 dark:text-emerald-300 shrink-0 text-[11px] sm:text-xs" id="sync-engine-heading" data-i18n="sync_engine_heading">Live Freshness:</span>
-            <span id="sync-banner-text" class="truncate text-[11px] text-stone-500 dark:text-stone-400" data-i18n="time_sync_banner">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+            <span class="font-extrabold text-emerald-900 dark:text-emerald-400 shrink-0 text-[11px] sm:text-xs" id="sync-engine-heading" data-i18n="sync_engine_heading">Live Freshness:</span>
+            <span id="sync-banner-text" class="truncate text-[11px] sm:text-xs text-stone-700 dark:text-stone-200 font-medium" data-i18n="time_sync_banner">
               Freshness & expiry countdown continuously synced with your local timezone.
             </span>
           </div>
           <div class="flex items-center gap-2 shrink-0">
-            <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 shadow-2xs" id="sync-timestamp-display">Live Synced</span>
-            <button type="button" onclick="document.getElementById('sync-banner').style.display='none'" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-sm font-bold leading-none p-0.5 cursor-pointer" title="Dismiss">&times;</button>
+            <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-100 shadow-2xs" id="sync-timestamp-display">Live Synced</span>
+            <button type="button" onclick="document.getElementById('sync-banner').style.display='none'" class="text-stone-500 hover:text-stone-800 dark:text-stone-300 dark:hover:text-white text-base font-extrabold leading-none p-1 cursor-pointer" title="Dismiss">&times;</button>
           </div>
         </div>
 
         <!-- FILTER CONTROLS & RESCUE ACTION BAR -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 pt-1">
           <div id="filter-controls" class="flex items-center gap-1.5 text-xs overflow-x-auto pb-1 max-w-full scrollbar-none flex-nowrap sm:flex-wrap">
-            <button class="filter-btn active bg-stone-900 dark:bg-white text-white dark:text-stone-900 px-3 sm:px-3.5 py-1.5 rounded-full font-medium shrink-0 whitespace-nowrap" data-filter="all" data-i18n="filter_all">All Items</button>
-            <button class="filter-btn bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 px-3 sm:px-3.5 py-1.5 rounded-full font-medium shrink-0 whitespace-nowrap" data-filter="urgent" data-i18n="filter_urgent">Urgent</button>
-            <button class="filter-btn bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 px-3 sm:px-3.5 py-1.5 rounded-full font-medium shrink-0 whitespace-nowrap" data-filter="fresh" data-i18n="filter_fresh">Fresh</button>
-            <button class="filter-btn bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 px-3 sm:px-3.5 py-1.5 rounded-full font-medium shrink-0 whitespace-nowrap" data-filter="expired" data-i18n="filter_expired">Expired</button>
+            <button class="filter-btn active bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 px-3.5 py-1.5 rounded-full font-bold shrink-0 whitespace-nowrap shadow-xs cursor-pointer border border-stone-900 dark:border-amber-400" data-filter="all" data-i18n="filter_all">All Items</button>
+            <button class="filter-btn bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-100 hover:bg-stone-200 dark:hover:bg-stone-700 px-3.5 py-1.5 rounded-full font-bold shrink-0 whitespace-nowrap cursor-pointer border border-stone-200 dark:border-stone-700" data-filter="urgent" data-i18n="filter_urgent">Urgent</button>
+            <button class="filter-btn bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-100 hover:bg-stone-200 dark:hover:bg-stone-700 px-3.5 py-1.5 rounded-full font-bold shrink-0 whitespace-nowrap cursor-pointer border border-stone-200 dark:border-stone-700" data-filter="fresh" data-i18n="filter_fresh">Fresh</button>
+            <button class="filter-btn bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-100 hover:bg-stone-200 dark:hover:bg-stone-700 px-3.5 py-1.5 rounded-full font-bold shrink-0 whitespace-nowrap cursor-pointer border border-stone-200 dark:border-stone-700" data-filter="expired" data-i18n="filter_expired">Expired</button>
           </div>
 
           <!-- MULTI-SELECT RESCUE BAR -->
@@ -8105,11 +8173,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         document.querySelectorAll('.filter-btn').forEach(b => {
-          b.className = 'filter-btn bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 px-3 sm:px-3.5 py-1.5 rounded-full font-medium shrink-0 whitespace-nowrap transition cursor-pointer';
+          b.className = 'filter-btn bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-100 hover:bg-stone-200 dark:hover:bg-stone-700 border border-stone-200 dark:border-stone-700 px-3.5 py-1.5 rounded-full font-bold shrink-0 whitespace-nowrap transition cursor-pointer';
         });
         const targetBtn = e.currentTarget || e.target.closest('.filter-btn');
         if (targetBtn) {
-          targetBtn.className = 'filter-btn active bg-stone-900 dark:bg-white text-white dark:text-stone-900 px-3 sm:px-3.5 py-1.5 rounded-full font-bold shadow-xs shrink-0 whitespace-nowrap transition cursor-pointer';
+          targetBtn.className = 'filter-btn active bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 border border-stone-900 dark:border-amber-400 px-3.5 py-1.5 rounded-full font-extrabold shadow-sm shrink-0 whitespace-nowrap transition cursor-pointer';
           currentFilter = targetBtn.dataset.filter || 'all';
           renderInventory();
         }
