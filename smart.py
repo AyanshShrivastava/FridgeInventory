@@ -4826,20 +4826,20 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             </p>
           </div>
 
-          <form id="command-form" class="flex flex-col sm:flex-row gap-2.5">
+          <form id="command-form" class="flex flex-col sm:flex-row gap-2.5 items-stretch">
             <div class="relative flex-grow w-full">
               <input 
                 type="text" 
                 id="cmd-input" 
                 placeholder="Type or speak (e.g. 'bought 2kg palak', 'i ate lays', 'used milk')..." 
-                class="w-full pl-3.5 sm:pl-4 pr-20 sm:pr-24 py-2.5 sm:py-3 rounded-2xl border border-stone-200 dark:border-stone-700 focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-stone-50/50 dark:bg-stone-800 font-medium"
+                class="w-full pl-3.5 sm:pl-4 pr-24 py-2.5 sm:py-3 rounded-2xl border border-stone-200 dark:border-stone-700 focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-stone-50/60 dark:bg-stone-800 font-medium transition shadow-2xs"
               />
-              <div class="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 sm:gap-1">
+              <div class="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                 <button 
                   type="button" 
                   id="cmd-photo-btn" 
                   title="Snap or upload food photo to auto-add items"
-                  class="p-1.5 rounded-xl text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors"
+                  class="p-1.5 rounded-xl text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-stone-100 dark:hover:bg-stone-700 transition cursor-pointer"
                 >
                   <svg class="w-4 h-4 sm:w-5 sm:h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 </button>
@@ -4847,7 +4847,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                   type="button" 
                   id="mic-btn" 
                   title="Speak command"
-                  class="p-1.5 rounded-xl text-stone-400 hover:text-brand-600 hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors"
+                  class="p-1.5 rounded-xl text-stone-400 hover:text-brand-600 hover:bg-stone-100 dark:hover:bg-stone-700 transition cursor-pointer"
                 >
                   <svg class="w-4 h-4 sm:w-5 sm:h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 003-3V5a3 3 0 00-6 0v6a3 3 0 003 3z"></path>
@@ -4859,40 +4859,27 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <!-- Hidden photo capture inputs for command bar -->
             <input type="file" id="cmd-camera-file" accept="image/*" capture="environment" class="hidden" />
             <input type="file" id="cmd-gallery-file" accept="image/*" class="hidden" />
+            <button type="button" id="cmd-camera-btn" class="hidden"></button>
 
-            <div class="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto shrink-0">
-              <button 
-                type="button" 
-                id="cmd-camera-btn"
-                class="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold rounded-2xl shadow-sm text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all transform active:scale-95"
-                title="Snap food photo to auto-add items"
-              >
-                <svg class="w-4 h-4 pointer-events-none shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                <span data-i18n="cmd_photo_btn" class="truncate">Add by Photo</span>
-              </button>
-              <button 
-                type="submit" 
-                id="cmd-submit-btn"
-                class="flex-1 sm:flex-none px-3.5 sm:px-5 py-2.5 sm:py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-2xl shadow-sm text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all transform active:scale-95"
-              >
-                <span data-i18n="cmd_btn" class="truncate">Process</span>
-                <svg class="w-4 h-4 pointer-events-none shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-              </button>
-            </div>
+            <button 
+              type="submit" 
+              id="cmd-submit-btn"
+              class="px-5 py-2.5 sm:py-3 bg-gradient-to-r from-brand-600 to-amber-600 hover:from-brand-500 hover:to-amber-500 text-white font-extrabold rounded-2xl shadow-sm hover:shadow-orange-500/20 text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all transform active:scale-95 shrink-0 cursor-pointer"
+            >
+              <span data-i18n="cmd_btn" class="truncate">Process</span>
+              <svg class="w-4 h-4 pointer-events-none shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </button>
           </form>
 
           <!-- SUGGESTION CHIPS -->
           <div class="mt-3.5 flex items-center gap-1.5 flex-wrap text-xs text-stone-500 dark:text-stone-400">
             <span class="font-medium" data-i18n="suggestions_label">Quick Try:</span>
-            <button type="button" id="cmd-photo-chip" class="chip hover:bg-emerald-100 dark:hover:bg-emerald-950/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40 px-2.5 py-1 rounded-lg flex items-center gap-1 transition">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-              <span data-i18n="chip_photo_snap">📷 Snap Food Photo</span>
-            </button>
-            <button type="button" class="chip hover:bg-stone-200 dark:hover:bg-stone-700 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-2.5 py-1 rounded-lg">पालक (Palak)</button>
-            <button type="button" class="chip hover:bg-stone-200 dark:hover:bg-stone-700 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-2.5 py-1 rounded-lg">पनीर (Paneer)</button>
-            <button type="button" class="chip hover:bg-stone-200 dark:hover:bg-stone-700 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-2.5 py-1 rounded-lg">टमाटर (Tomato)</button>
-            <button type="button" class="chip hover:bg-stone-200 dark:hover:bg-stone-700 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-2.5 py-1 rounded-lg">i ate lays</button>
-            <button type="button" class="chip hover:bg-stone-200 dark:hover:bg-stone-700 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-2.5 py-1 rounded-lg">used milk</button>
+            <button type="button" id="cmd-photo-chip" class="hidden"></button>
+            <button type="button" class="chip hover:bg-stone-200 dark:hover:bg-stone-700 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-2.5 py-1 rounded-lg transition cursor-pointer">पालक (Palak)</button>
+            <button type="button" class="chip hover:bg-stone-200 dark:hover:bg-stone-700 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-2.5 py-1 rounded-lg transition cursor-pointer">पनीर (Paneer)</button>
+            <button type="button" class="chip hover:bg-stone-200 dark:hover:bg-stone-700 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-2.5 py-1 rounded-lg transition cursor-pointer">टमाटर (Tomato)</button>
+            <button type="button" class="chip hover:bg-stone-200 dark:hover:bg-stone-700 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-2.5 py-1 rounded-lg transition cursor-pointer">i ate lays</button>
+            <button type="button" class="chip hover:bg-stone-200 dark:hover:bg-stone-700 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 px-2.5 py-1 rounded-lg transition cursor-pointer">used milk</button>
           </div>
         </div>
 
@@ -4911,7 +4898,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               <div class="text-xs font-medium text-stone-500 dark:text-stone-400" data-i18n="stat_total">Total Items</div>
             </div>
           </div>
-          <div class="bg-white dark:bg-stone-900 p-4 rounded-2xl border border-stone-200/80 dark:border-stone-800 shadow-sm flex items-center gap-3.5 transition-colors">
+          <div class="bg-white dark:bg-stone-900 p-4 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40 bg-emerald-50/20 dark:bg-emerald-950/20 shadow-sm flex items-center gap-3.5 transition-colors">
             <div class="w-10 h-10 rounded-xl bg-leaf-50 dark:bg-stone-800 text-leaf-600 flex items-center justify-center shrink-0">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
@@ -4920,7 +4907,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               <div class="text-xs font-medium text-stone-500 dark:text-stone-400" data-i18n="stat_fresh">Fresh (3+ Days)</div>
             </div>
           </div>
-          <div class="bg-white dark:bg-stone-900 p-4 rounded-2xl border border-stone-200/80 dark:border-stone-800 shadow-sm flex items-center gap-3.5 transition-colors">
+          <div class="bg-white dark:bg-stone-900 p-4 rounded-2xl border border-amber-200/60 dark:border-amber-900/40 bg-amber-50/20 dark:bg-amber-950/20 shadow-sm flex items-center gap-3.5 transition-colors">
             <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-stone-800 text-brand-600 flex items-center justify-center shrink-0">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
             </div>
@@ -4929,7 +4916,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               <div class="text-xs font-medium text-stone-500 dark:text-stone-400" data-i18n="stat_urgent">Expiring Soon</div>
             </div>
           </div>
-          <div class="bg-white dark:bg-stone-900 p-4 rounded-2xl border border-stone-200/80 dark:border-stone-800 shadow-sm flex items-center gap-3.5 transition-colors">
+          <div class="bg-white dark:bg-stone-900 p-4 rounded-2xl border border-rose-200/60 dark:border-rose-900/40 bg-rose-50/20 dark:bg-rose-950/20 shadow-sm flex items-center gap-3.5 transition-colors">
             <div class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-stone-800 text-rose-600 flex items-center justify-center shrink-0">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
@@ -4940,16 +4927,19 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- REAL-TIME TIME SYNC STATUS BANNER -->
-        <div id="sync-banner" class="p-3.5 bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-transparent dark:from-stone-800/80 dark:to-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-          <div class="flex items-center gap-2 text-stone-700 dark:text-stone-300">
+        <!-- REAL-TIME TIME SYNC STATUS BANNER (COMPACT & DISMISSIBLE) -->
+        <div id="sync-banner" class="px-3.5 py-2 rounded-2xl bg-emerald-50/60 dark:bg-stone-850/80 border border-emerald-200/60 dark:border-stone-700/60 flex items-center justify-between gap-2 text-xs text-stone-600 dark:text-stone-300 transition-all shadow-2xs">
+          <div class="flex items-center gap-2 min-w-0">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-            <span class="font-bold" id="sync-engine-heading" data-i18n="sync_engine_heading">Live Freshness Engine:</span>
-            <span id="sync-banner-text" data-i18n="time_sync_banner">
-              Automatically comparing your country's local time against food addition dates. Freshness & expiry countdowns update continuously without refreshing.
+            <span class="font-bold text-emerald-800 dark:text-emerald-300 shrink-0 text-[11px] sm:text-xs" id="sync-engine-heading" data-i18n="sync_engine_heading">Live Freshness:</span>
+            <span id="sync-banner-text" class="truncate text-[11px] text-stone-500 dark:text-stone-400" data-i18n="time_sync_banner">
+              Freshness & expiry countdown continuously synced with your local timezone.
             </span>
           </div>
-          <div class="text-[11px] text-stone-500 dark:text-stone-400 font-mono shrink-0" id="sync-timestamp-display">Live Synced</div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 shadow-2xs" id="sync-timestamp-display">Live Synced</span>
+            <button type="button" onclick="document.getElementById('sync-banner').style.display='none'" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-sm font-bold leading-none p-0.5 cursor-pointer" title="Dismiss">&times;</button>
+          </div>
         </div>
 
         <!-- FILTER CONTROLS & RESCUE ACTION BAR -->
@@ -5974,6 +5964,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     let currentLang = localStorage.getItem('fi_lang') || localStorage.getItem('rasoi_lang') || 'en';
     let selectedItemsForRescue = new Set();
     let pendingModalItem = null;
+    let latestRecipe = null;
+    let isRecipeSpeaking = false;
     let swRegistration = null;
     let pushSubscription = null;
 
@@ -6408,7 +6400,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       }
     }
 
-    document.getElementById('lang-toggle-btn').addEventListener('click', () => {
+    document.getElementById('lang-toggle-btn')?.addEventListener('click', () => {
       applyLanguage(currentLang === 'en' ? 'hi' : 'en');
       renderInventory();
     });
@@ -6625,7 +6617,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       initTheme();
     }
 
-    document.getElementById('theme-toggle-btn').addEventListener('click', toggleTheme);
+    document.getElementById('theme-toggle-btn')?.addEventListener('click', toggleTheme);
 
     // Fast, Compact Cartoon Toast Notifications (Warm Orange Layout, 1.6s auto-dismiss)
     function showToast(message, type = 'info', messageHi = null) {
@@ -6904,7 +6896,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       }
     });
 
-    document.getElementById('share-fridge-btn').addEventListener('click', () => {
+    document.getElementById('share-fridge-btn')?.addEventListener('click', () => {
       if (currentFridge) {
         const pinToShare = currentFridgePin || (currentFridge ? localStorage.getItem('fi_last_pin_' + currentFridge) : '') || '';
         const text = `FridgeInventory Login Details:\nFridge ID: ${currentFridge}\nPIN / Password: ${pinToShare || '(Your Family PIN)'}\nURL: ${window.location.origin}`;
@@ -7353,10 +7345,13 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         });
       });
 
-      // Delete handlers
+      // Delete handlers (safely target closest .delete-btn to support inner icons/text)
       document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
-          await deleteItem(e.target.dataset.id);
+          const btnEl = e.currentTarget || e.target.closest('.delete-btn');
+          if (btnEl && btnEl.dataset.id) {
+            await deleteItem(btnEl.dataset.id);
+          }
         });
       });
     }
@@ -7364,18 +7359,33 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     function createItemCard(item) {
       let badgeClass = 'bg-leaf-50 dark:bg-stone-800 text-leaf-700 dark:text-leaf-300 border-leaf-200 dark:border-stone-700';
       let statusText = `${item.days_left}d left`;
+      let barColor = 'bg-emerald-500';
+      let pct = 100;
       
-      if (item.days_left < 0) {
-        badgeClass = 'bg-rose-50 dark:bg-stone-800 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-stone-700 font-semibold';
-        statusText = currentLang === 'hi' ? `अवधि समाप्त (${Math.abs(item.days_left)} दिन पहले)` : `Expired ${Math.abs(item.days_left)}d ago`;
-      } else if (item.days_left === 0) {
-        badgeClass = 'bg-amber-100 dark:bg-stone-800 text-brand-800 dark:text-brand-300 border-amber-300 dark:border-stone-700 font-bold animate-pulse';
+      const daysElapsed = Math.max(0, parseInt(item.days_elapsed || 0, 10));
+      const daysLeft = parseInt(item.days_left || 0, 10);
+      const totalSpan = Math.max(1, daysElapsed + Math.max(0, daysLeft));
+      
+      if (daysLeft < 0) {
+        badgeClass = 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800 font-semibold';
+        statusText = currentLang === 'hi' ? `अवधि समाप्त (${Math.abs(daysLeft)} दिन पहले)` : `Expired ${Math.abs(daysLeft)}d ago`;
+        barColor = 'bg-rose-500';
+        pct = 100;
+      } else if (daysLeft === 0) {
+        badgeClass = 'bg-amber-100 dark:bg-amber-950/70 text-brand-800 dark:text-brand-300 border-amber-300 dark:border-amber-700 font-bold animate-pulse';
         statusText = currentLang === 'hi' ? 'आज समाप्त' : 'Expires Today';
-      } else if (item.days_left <= 2) {
-        badgeClass = 'bg-amber-50 dark:bg-stone-800 text-brand-700 dark:text-brand-300 border-amber-200 dark:border-stone-700 font-semibold';
-        statusText = currentLang === 'hi' ? `${item.days_left} दिन बाकी` : `${item.days_left}d left`;
+        barColor = 'bg-amber-500';
+        pct = 15;
+      } else if (daysLeft <= 2) {
+        badgeClass = 'bg-amber-50 dark:bg-amber-950/50 text-brand-700 dark:text-brand-300 border-amber-200 dark:border-amber-800 font-semibold';
+        statusText = currentLang === 'hi' ? `${daysLeft} दिन बाकी` : `${daysLeft}d left`;
+        barColor = 'bg-amber-500';
+        pct = Math.min(100, Math.max(15, Math.round((daysLeft / totalSpan) * 100)));
       } else {
-        statusText = currentLang === 'hi' ? `${item.days_left} दिन बाकी` : `${item.days_left}d left`;
+        badgeClass = 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
+        statusText = currentLang === 'hi' ? `${daysLeft} दिन बाकी` : `${daysLeft}d left`;
+        barColor = 'bg-emerald-500';
+        pct = Math.min(100, Math.max(25, Math.round((daysLeft / totalSpan) * 100)));
       }
 
       const isChecked = selectedItemsForRescue.has(item.name_en);
@@ -7393,44 +7403,68 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         meat_fish_egg: 'अंडा व मीट',
         spice_condiment: 'मसाले'
       };
+      const CATEGORY_ICONS = {
+        vegetable: '🥦',
+        fruit: '🍎',
+        dairy: '🥛',
+        cooked_dish: '🍲',
+        snack_bakery: '🍪',
+        beverage: '🧃',
+        grain_pulse_flour: '🌾',
+        meat_fish_egg: '🥚',
+        spice_condiment: '🧂'
+      };
       const catDisplay = currentLang === 'hi' ? (CATEGORY_NAMES_HI[item.category] || item.category.replace(/_/g, ' ')) : item.category.replace(/_/g, ' ');
+      const catIcon = CATEGORY_ICONS[item.category] || '🍱';
       const elapsedText = currentLang === 'hi' ? (item.days_elapsed === 0 ? 'आज' : `${item.days_elapsed} दिन पहले`) : (item.days_elapsed === 0 ? 'Today' : `${item.days_elapsed}d ago`);
 
       const card = document.createElement('div');
-      card.className = `bg-white dark:bg-stone-900 rounded-2xl p-4 border border-stone-200/80 dark:border-stone-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between ${
-        item.days_left < 0 ? 'opacity-85' : ''
+      card.className = `group bg-white dark:bg-stone-900 rounded-2xl p-4 sm:p-4.5 border border-stone-200/80 dark:border-stone-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between hover:-translate-y-0.5 ${
+        item.days_left < 0 ? 'opacity-90 border-rose-200/60 dark:border-rose-950/50' : ''
       }`;
       card.innerHTML = `
         <div class="space-y-3">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-1.5 flex-wrap">
-                <h4 class="font-bold text-stone-900 dark:text-white text-sm leading-tight break-words">${displayName}</h4>
-                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-500 uppercase shrink-0">${catDisplay}</span>
+                <span class="text-base select-none shrink-0" title="${catDisplay}">${catIcon}</span>
+                <h4 class="font-extrabold text-stone-900 dark:text-white text-sm sm:text-base leading-tight break-words tracking-tight">${displayName}</h4>
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 uppercase shrink-0">${catDisplay}</span>
               </div>
-              ${subName ? `<p class="text-xs text-stone-500 dark:text-stone-400 mt-0.5 truncate">${subName}</p>` : ''}
+              ${subName ? `<p class="text-xs text-stone-500 dark:text-stone-400 mt-0.5 truncate font-medium">${subName}</p>` : ''}
             </div>
-            <span class="text-[11px] px-2.5 py-0.5 rounded-full border ${badgeClass} shrink-0 whitespace-nowrap">
+            <span class="text-[11px] px-2.5 py-0.5 rounded-full border ${badgeClass} shrink-0 whitespace-nowrap shadow-2xs font-semibold">
               ${statusText}
             </span>
           </div>
 
+          <div class="w-full bg-stone-100 dark:bg-stone-800 h-1 rounded-full overflow-hidden">
+            <div class="h-full ${barColor} rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+          </div>
+
           <div class="text-[11px] text-stone-500 dark:text-stone-400 space-y-1.5">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px]">
-              <div>${currentLang === 'hi' ? 'जोड़ा गया:' : 'Added:'} <b class="text-stone-700 dark:text-stone-300 font-medium">${item.added_date}</b> (${elapsedText})</div>
-              <div class="sm:text-right">${currentLang === 'hi' ? 'समाप्त होगा:' : 'Expires:'} <b class="text-stone-700 dark:text-stone-300 font-medium">${item.expiry_date}</b></div>
+              <div class="flex items-center gap-1">
+                <span class="text-stone-400 text-[10px]">🗓️</span>
+                <span>${currentLang === 'hi' ? 'जोड़ा गया:' : 'Added:'} <b class="text-stone-700 dark:text-stone-300 font-semibold">${item.added_date}</b> (${elapsedText})</span>
+              </div>
+              <div class="sm:text-right flex items-center sm:justify-end gap-1">
+                <span class="text-stone-400 text-[10px]">⏳</span>
+                <span>${currentLang === 'hi' ? 'समाप्त:' : 'Expires:'} <b class="text-stone-700 dark:text-stone-300 font-semibold">${item.expiry_date}</b></span>
+              </div>
             </div>
-            ${item.storage_tip ? `<div class="text-stone-600 dark:text-stone-300 bg-stone-50 dark:bg-stone-800/80 p-2 rounded-xl border border-stone-100 dark:border-stone-700/80 leading-relaxed text-[11px]">${item.storage_tip}</div>` : ''}
+            ${item.storage_tip ? `<div class="text-stone-600 dark:text-stone-300 bg-stone-50/80 dark:bg-stone-800/60 p-2 rounded-xl border border-stone-100 dark:border-stone-700/60 leading-relaxed text-[11px] flex items-start gap-1.5"><span class="text-amber-500 shrink-0 text-xs">💡</span><span class="flex-1">${item.storage_tip}</span></div>` : ''}
           </div>
         </div>
 
-        <div class="mt-3 pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between gap-2">
-          <label class="flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-300 cursor-pointer select-none min-w-0">
-            <input type="checkbox" class="rescue-check rounded text-brand-600 focus:ring-brand-500 shrink-0" data-name="${item.name_en}" ${isChecked ? 'checked' : ''}>
+        <div class="mt-3.5 pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between gap-2">
+          <label class="flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-300 cursor-pointer select-none min-w-0 font-medium">
+            <input type="checkbox" class="rescue-check rounded text-brand-600 focus:ring-brand-500 shrink-0 w-3.5 h-3.5" data-name="${item.name_en}" ${isChecked ? 'checked' : ''}>
             <span class="truncate">${currentLang === 'hi' ? 'रेस्क्यू में जोड़ें' : 'Select for Rescue'}</span>
           </label>
-          <button class="delete-btn text-xs text-stone-400 hover:text-rose-600 font-medium transition px-2 py-1 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 shrink-0 cursor-pointer" data-id="${item.id}">
-            ${currentLang === 'hi' ? 'हटाएँ' : 'Clear'}
+          <button type="button" class="delete-btn text-xs text-stone-400 hover:text-rose-600 font-medium transition px-2.5 py-1 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 inline-flex items-center gap-1 shrink-0 cursor-pointer" data-id="${item.id}" title="${currentLang === 'hi' ? 'सामान हटाएँ' : 'Remove item'}">
+            <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            <span>${currentLang === 'hi' ? 'हटाएँ' : 'Remove'}</span>
           </button>
         </div>
       `;
@@ -7463,6 +7497,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           return;
         }
         if (!res.ok) throw new Error('Delete failed');
+        const deletedItem = inventory.find(i => i.id === id);
+        if (deletedItem && selectedItemsForRescue.has(deletedItem.name_en)) {
+          selectedItemsForRescue.delete(deletedItem.name_en);
+          updateRescueBar();
+        }
         inventory = inventory.filter(i => i.id !== id);
         try { localStorage.setItem('fi_cached_inventory', JSON.stringify(inventory)); } catch(e){}
         renderInventory();
@@ -7724,9 +7763,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           const tabRescueBtn = document.getElementById('tab-rescue-btn');
           if (tabRescueBtn) tabRescueBtn.click();
           const rescueInput = document.getElementById('rescue-items-input');
-          if (rescueInput) rescueInput.value = data.dish || rawInput;
+          if (rescueInput) rescueInput.value = data.dish || text;
           stopRecipeSpeech();
-          triggerRecipeGeneration([data.dish || rawInput]);
+          triggerRecipeGeneration([data.dish || text]);
           showToast(currentLang === 'hi' ? `'${data.dish}' की रेसिपी तैयार हो रही है!` : `Generating recipe for '${data.dish}'!`, 'info');
           return;
         }
@@ -8029,12 +8068,13 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     const secTest = document.getElementById('section-test');
 
     function switchTab(activeBtn, activeSec) {
+      if (activeSec !== secResc) stopRecipeSpeech();
       [tabInvBtn, tabUrgentBtn, tabPushBtn, tabRescBtn, tabTestBtn].forEach(b => {
-        b.className = 'tab-btn py-2.5 sm:py-3 px-2.5 sm:px-3 border-b-2 border-transparent text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0';
+        b.className = 'tab-btn py-2.5 sm:py-3 px-2.5 sm:px-3 border-b-2 border-transparent text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0 transition-colors';
       });
       [secInv, secUrgent, secPush, secResc, secTest].forEach(s => s.classList.add('hidden'));
 
-      activeBtn.className = 'tab-btn py-2.5 sm:py-3 px-2.5 sm:px-3 border-b-2 border-brand-600 text-brand-600 dark:text-brand-400 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0 font-bold';
+      activeBtn.className = 'tab-btn py-2.5 sm:py-3 px-2.5 sm:px-3 border-b-2 border-brand-600 text-brand-600 dark:text-brand-400 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0 font-bold transition-colors';
       activeSec.classList.remove('hidden');
     }
 
@@ -8044,18 +8084,18 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     tabRescBtn.addEventListener('click', () => switchTab(tabRescBtn, secResc));
     tabTestBtn.addEventListener('click', () => switchTab(tabTestBtn, secTest));
 
-    document.getElementById('header-push-pill').addEventListener('click', () => {
+    document.getElementById('header-push-pill')?.addEventListener('click', () => {
       switchTab(tabPushBtn, secPush);
     });
 
-    document.getElementById('urgent-rescue-all-btn').addEventListener('click', () => {
+    document.getElementById('urgent-rescue-all-btn')?.addEventListener('click', () => {
       const urgentItems = inventory.filter(i => i.days_left <= 2).map(i => i.name_en);
       switchTab(tabRescBtn, secResc);
       document.getElementById('rescue-items-input').value = urgentItems.join(', ');
       triggerRecipeGeneration(urgentItems);
     });
 
-    document.getElementById('trigger-rescue-btn').addEventListener('click', () => {
+    document.getElementById('trigger-rescue-btn')?.addEventListener('click', () => {
       switchTab(tabRescBtn, secResc);
       const items = Array.from(selectedItemsForRescue);
       document.getElementById('rescue-items-input').value = items.join(', ');
@@ -8065,11 +8105,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         document.querySelectorAll('.filter-btn').forEach(b => {
-          b.className = 'filter-btn bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 px-3.5 py-1.5 rounded-full font-medium';
+          b.className = 'filter-btn bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 px-3 sm:px-3.5 py-1.5 rounded-full font-medium shrink-0 whitespace-nowrap transition cursor-pointer';
         });
-        e.target.className = 'filter-btn active bg-stone-900 dark:bg-white text-white dark:text-stone-900 px-3.5 py-1.5 rounded-full font-medium';
-        currentFilter = e.target.dataset.filter;
-        renderInventory();
+        const targetBtn = e.currentTarget || e.target.closest('.filter-btn');
+        if (targetBtn) {
+          targetBtn.className = 'filter-btn active bg-stone-900 dark:bg-white text-white dark:text-stone-900 px-3 sm:px-3.5 py-1.5 rounded-full font-bold shadow-xs shrink-0 whitespace-nowrap transition cursor-pointer';
+          currentFilter = targetBtn.dataset.filter || 'all';
+          renderInventory();
+        }
       });
     });
 
@@ -8080,6 +8123,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     const closeRecipeBtn = document.getElementById('close-recipe-btn');
     const rescueItemsInput = document.getElementById('rescue-items-input');
     const rescueSpellBadge = document.getElementById('rescue-spell-badge');
+
+    closeRecipeBtn?.addEventListener('click', () => {
+      stopRecipeSpeech();
+      recipeContainer?.classList.add('hidden');
+    });
 
     // Live spelling correction for Rescue Recipe custom ingredients
     async function checkAndCorrectRescueSpelling(customStr = null) {
@@ -8117,9 +8165,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       rescueItemsInput.addEventListener('change', () => checkAndCorrectRescueSpelling());
     }
 
-    closeRecipeBtn.addEventListener('click', () => {
-      recipeContainer.classList.add('hidden');
-    });
 
     // Food Scanner Close Button & Helper Functions
     const closeScannerBtn = document.getElementById('close-scanner-btn');
@@ -8191,8 +8236,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         generateRecipeBtn.disabled = false;
       }
     }
-
-    let latestRecipe = null;
 
     function renderRecipe(recipe) {
       if (!recipe) return;
@@ -8396,7 +8439,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         // ========================================================
     // VOICE AUDIO RECIPE NARRATOR (SPEECH SYNTHESIS ENGINE)
     // ========================================================
-    let isRecipeSpeaking = false;
 
     function updateSpeechButtonUI(speaking) {
       isRecipeSpeaking = speaking;
@@ -8507,12 +8549,27 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       triggerRecipeGeneration(items);
     });
 
-    document.getElementById('copy-recipe-btn').addEventListener('click', () => {
-      const name = document.getElementById('recipe-name').textContent;
-      const steps = Array.from(document.querySelectorAll('#recipe-steps-list li')).map(li => li.innerText).join('\n');
-      const header = currentLang === 'hi' ? 'पकाने की विधि:' : 'Instructions:';
-      navigator.clipboard.writeText(`${name}\n\n${header}\n${steps}`).then(() => {
-        showToast(currentLang === 'hi' ? 'रेसिपी क्लिपबोर्ड में कॉपी की गई!' : 'Recipe copied to clipboard!', 'success');
+    document.getElementById('copy-recipe-btn')?.addEventListener('click', () => {
+      const name = document.getElementById('recipe-name')?.textContent || '';
+      const nameHi = document.getElementById('recipe-name-hi')?.textContent || '';
+      const time = document.getElementById('recipe-time-text')?.textContent || '';
+      const rescued = Array.from(document.querySelectorAll('#recipe-rescued-list li')).map(li => `• ${li.innerText}`).join('\n');
+      const pantry = Array.from(document.querySelectorAll('#recipe-pantry-list li')).map(li => `• ${li.innerText}`).join('\n');
+      const steps = Array.from(document.querySelectorAll('#recipe-steps-list li')).map((li, idx) => `${idx + 1}. ${li.innerText.replace(/^\d+[\.\)]\s*/, '')}`).join('\n');
+      const tip = document.getElementById('recipe-tip')?.textContent || '';
+      const pairing = document.getElementById('recipe-pairing-text')?.textContent || '';
+
+      let text = `🍱 ${name}`;
+      if (nameHi && nameHi !== name) text += ` (${nameHi})`;
+      if (time) text += `\n⏱️ ${currentLang === 'hi' ? 'समय:' : 'Time:'} ${time}`;
+      if (rescued) text += `\n\n🥬 ${currentLang === 'hi' ? 'बचाई गई सामग्री:' : 'Rescued Ingredients:'}\n${rescued}`;
+      if (pantry) text += `\n\n🧂 ${currentLang === 'hi' ? 'रसोई के मसाले:' : 'Pantry Staples:'}\n${pantry}`;
+      if (steps) text += `\n\n👩‍🍳 ${currentLang === 'hi' ? 'पकाने की विधि:' : 'Cooking Instructions:'}\n${steps}`;
+      if (tip) text += `\n\n💡 ${currentLang === 'hi' ? 'शेफ़ का नुस्खा:' : "Chef's Tip:"} ${tip}`;
+      if (pairing) text += `\n\n🍽️ ${currentLang === 'hi' ? 'परोसने की सलाह:' : 'Serving & Pairing:'} ${pairing}`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(currentLang === 'hi' ? 'पूरी रेसिपी कॉपी की गई!' : 'Complete recipe copied to clipboard!', 'success');
       });
     });
 
