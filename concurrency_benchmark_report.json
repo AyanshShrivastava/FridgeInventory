@@ -1,0 +1,142 @@
+{
+  "breaking_point": 25,
+  "exact_max_reliable_concurrency": 20,
+  "history": [
+    {
+      "target_concurrency": 13,
+      "label": "(Baseline: 13 Accounts)",
+      "successful": 13,
+      "failed": 0,
+      "success_rate_pct": 100.0,
+      "wall_sec": 16.67,
+      "rps": 0.78,
+      "median_lat_ms": 4013.9,
+      "avg_lat_ms": 4279.0,
+      "all_passed": true,
+      "sample_recipes": [
+        "Spicy Seafood Stew Casserole With Tomatoes And Lime",
+        "Stuffed Onion Vegetable",
+        "Refreshing Creamy Mango Lassi",
+        "Homemade Tater Tots",
+        "Whole Wheat Pita Bread"
+      ],
+      "errors": []
+    },
+    {
+      "target_concurrency": 15,
+      "label": "(Scale Step 2: 15 Accounts)",
+      "successful": 15,
+      "failed": 0,
+      "success_rate_pct": 100.0,
+      "wall_sec": 13.61,
+      "rps": 1.1,
+      "median_lat_ms": 2050.5,
+      "avg_lat_ms": 1665.0,
+      "all_passed": true,
+      "sample_recipes": [
+        "Brown Sugar Boba Milk Tea",
+        "Refreshing Creamy Mango Lassi",
+        "Stuffed Onion Vegetable",
+        "Badam Halwa",
+        "Gobi Ke Kofte (Cauliflower Fritters In Spicy Gravy)"
+      ],
+      "errors": []
+    },
+    {
+      "target_concurrency": 18,
+      "label": "(Scale Step 3: 18 Accounts)",
+      "successful": 18,
+      "failed": 0,
+      "success_rate_pct": 100.0,
+      "wall_sec": 18.86,
+      "rps": 0.95,
+      "median_lat_ms": 4563.3,
+      "avg_lat_ms": 4036.8,
+      "all_passed": true,
+      "sample_recipes": [
+        "Palak Paneer Bhurji",
+        "Refreshing Creamy Mango Lassi",
+        "Paneer In Coconut Gravy",
+        "Brown Sugar Boba Milk Tea",
+        "Spinach Garlic Bruschetta With Red Bell Pepper Sauce"
+      ],
+      "errors": []
+    },
+    {
+      "target_concurrency": 20,
+      "label": "(Scale Step 4: 20 Accounts)",
+      "successful": 20,
+      "failed": 0,
+      "success_rate_pct": 100.0,
+      "wall_sec": 19.97,
+      "rps": 1.0,
+      "median_lat_ms": 4250.5,
+      "avg_lat_ms": 3533.2,
+      "all_passed": true,
+      "sample_recipes": [
+        "Badam Halwa",
+        "Homemade Tater Tots",
+        "Tomato Relish",
+        "Brown Sugar Boba Milk Tea",
+        "Refreshing Creamy Mango Lassi"
+      ],
+      "errors": []
+    },
+    {
+      "target_concurrency": 25,
+      "label": "(Scale Step 5: 25 Accounts)",
+      "successful": 24,
+      "failed": 1,
+      "success_rate_pct": 96.0,
+      "wall_sec": 23.26,
+      "rps": 1.03,
+      "median_lat_ms": 3290.4,
+      "avg_lat_ms": 2803.8,
+      "all_passed": false,
+      "sample_recipes": [
+        "Whole Wheat Pita Bread",
+        "Paneer In Coconut Gravy",
+        "Cabbage And Carrot Sambharo",
+        "Sundakkai And Methi Leaves Sambar",
+        "Refreshing Creamy Mango Lassi"
+      ],
+      "errors": [
+        "Create Exception: HTTPSConnectionPool(host='fridgeinventory.onrender.com', port=443): Max retries exceeded with url: /api/auth/create (Caused by NameResolutionError(\"HTTPSConnection(host='fridgeinventory.onrender.com', port=443): Failed to resolve 'fridgeinventory.onrender.com' ([Errno 8] nodename nor servname provided, or not known)\"))"
+      ]
+    },
+    {
+      "target_concurrency": 21,
+      "label": "(Fine Search: 21 Accounts)",
+      "successful": 8,
+      "failed": 13,
+      "success_rate_pct": 38.095238095238095,
+      "wall_sec": 16.03,
+      "rps": 0.5,
+      "median_lat_ms": 1000.4,
+      "avg_lat_ms": 1057.2,
+      "all_passed": false,
+      "sample_recipes": [
+        "Badam Halwa",
+        "Palak Paneer Bhurji",
+        "Refreshing Creamy Mango Lassi",
+        "Homemade Baked Beans (Wholesome & Healthy)",
+        "Whole Wheat Pita Bread"
+      ],
+      "errors": [
+        "Recipe Exception: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))",
+        "Recipe Exception: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))",
+        "Recipe Exception: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))",
+        "Recipe Exception: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))",
+        "Recipe Exception: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))",
+        "Recipe Exception: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))",
+        "Recipe Exception: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))",
+        "Recipe Exception: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))",
+        "Recipe Exception: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))",
+        "Recipe Exception: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))",
+        "Recipe Exception: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))",
+        "Recipe Exception: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))",
+        "Recipe Exception: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))"
+      ]
+    }
+  ]
+}
