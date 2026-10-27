@@ -52,4 +52,7 @@ Thumbs.db
 *.sqlite
 scratch/
 raw_indian_recipes.csv
+food_recipes_raw.csv
+raw_food_recipes_1m.csv
+*.parquet
 !recipes.db.gz
