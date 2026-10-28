@@ -2122,22 +2122,22 @@ You MUST return:
 IMPORTANT: Always use the clean proper noun of the food item (e.g. 'Mango', 'Milk', 'Cheese') without any verbs or question words like 'make', 'cook', or user typos like 'maake'.
 
 Requirements for Cooked Recipes:
-- recipe_name: Authentic dish name in English (e.g. 'Restaurant-Style Paneer Butter Masala')
-- recipe_name_hi: In authentic Hindi Devanagari script (e.g. 'शाही पनीर बटर मसाला')
+- recipe_name: Authentic dish name in English (e.g. 'Crispy South Indian Masala Dosa', 'Traditional Sweet Mishri / Rock Candy', 'Dhaba-Style Double Tadka Dal')
+- recipe_name_hi: In authentic 100% Hindi Devanagari script (e.g. 'कुरकुरा मसाला डोसा', 'पारंपरिक शुद्ध मिश्री', 'ढाबा स्टाइल डबल तड़का दाल'). NEVER use English/Latin alphabet letters in Hindi fields, and NEVER append placeholder text like '(स्वादिष्ट रेसिपी)'!
 - meal_type: Dish type in English ('Main Course', 'Street Food Snack', 'Beverage / Drink', 'Traditional Dessert', 'Breakfast Special')
-- meal_type_hi: Dish type in Hindi ('मुख्य भोजन', 'स्वादिष्ट स्नैक', 'ताज़ा पेय', 'पारंपरिक मिठाई', 'खास नाश्ता')
-- pairing_notes: What this dish pairs best with (e.g. 'Serve hot with garlic naan, tandoori roti, or jeera rice.')
-- pairing_notes_hi: Pairing notes in Hindi Devanagari
+- meal_type_hi: Dish type in authentic Hindi Devanagari ('मुख्य भोजन', 'स्वादिष्ट स्नैक', 'ताज़ा पेय', 'पारंपरिक मिठाई', 'खास नाश्ता')
+- pairing_notes: Authentic culinary pairing directly suited for {dish}. For sweets/candy/desserts: pair with hot masala chai, saffron milk, or as festive prasad/mukhwas. For dosa/idli: pair with fresh coconut chutney, tomato chutney, and piping hot sambar. For dal/curry: pair with steamed basmati rice or hot rotis. NEVER suggest salad or crusty bread for sweets, candy, or South Indian breakfast!
+- pairing_notes_hi: Authentic culinary pairing in Hindi Devanagari
 - prep_time_minutes: Realistic cooking time integer (10 to 45 mins)
-- ingredients_used: Key primary ingredients needed for {dish}
+- ingredients_used: Key primary EDIBLE ingredients needed for {dish}. MUST be 100% edible food items (never non-food craft objects like butcher's twine, ruined pans, string, or glue)!
 - ingredients_used_hi: Key primary ingredients in Hindi Devanagari
 - corrected_ingredients: Key ingredients list
 - pantry_items_needed: Spices, oils, aromatics, and seasoning needed with measurements
 - pantry_items_needed_hi: Spices and staples in Hindi with measurements
 - steps: Detailed step-by-step instructions on how to cook this recipe in English. MUST be a JSON array of individual strings, with ONE cooking step per string (e.g. ["Step 1 text", "Step 2 text"]). DO NOT put all steps inside a single string!
-- steps_hi: Complete step-by-step instructions in natural, fluent Hindi (Devanagari script) as a JSON array of individual strings, with ONE cooking step per string.
-- chef_tip: Grandma's secret culinary tip ('दादी माँ का सीक्रेट नुस्खा') for making this recipe perfect
-- chef_tip_hi: Secret culinary tip in Hindi
+- steps_hi: Complete step-by-step instructions in natural, fluent Hindi (Devanagari script) as a JSON array of individual strings, with ONE cooking step per string. Translate cooker whistles as 'सीटी' (never 'cities'), ginger grating as 'कद्दूकस करें' (never 'tighten it'), bay leaf as 'तेजपत्ता'.
+- chef_tip: Grandma's secret culinary tip directly tailored to {dish}. For sweets/candy/desserts: advise on sugar syrup thread stage (एक तार / दो तार), crystallization seed crystals, or cooling without stirring. NEVER give a spice blooming or hot oil/butter tip for sweets, candy, or beverages! For dosas: advise on batter fermentation, splashing water on hot tawa, and wiping with halved onion. For dal: advise on clamping lid immediately on sizzling garlic-ghee tadka.
+- chef_tip_hi: Secret culinary tip in authentic Hindi Devanagari ('दादी माँ का सीक्रेट नुस्खा')
 """
 
 def detect_recipe_dish_query(items: List[str]) -> Tuple[bool, str]:
@@ -2180,8 +2180,9 @@ def detect_recipe_dish_query(items: List[str]) -> Tuple[bool, str]:
         "pav bhaji", "samosa", "pakoda", "pakora", "maggi", "noodles", "chowmein", "fried rice",
         "kheer", "halwa", "sooji halwa", "gajar halwa", "gulab jamun", "cake", "chocolate cake",
         "masala chai", "tea", "cold coffee", "coffee", "lassi", "mango lassi", "lemonade",
-        "aloo paratha", "paratha", "poha", "upma", "dosa", "idli", "pasta", "pizza",
-        "butter chicken", "chicken curry", "egg curry", "fish curry", "french fries"
+        "aloo paratha", "paratha", "poha", "upma", "dosa", "dose", "idli", "pasta", "pizza",
+        "butter chicken", "chicken curry", "egg curry", "fish curry", "french fries",
+        "rock candy", "rock-candy", "candy", "mishri"
     ]
     for kd in known_dishes:
         if kd == cleaned.lower():
@@ -2192,7 +2193,73 @@ def detect_recipe_dish_query(items: List[str]) -> Tuple[bool, str]:
 def get_dish_recipe_fallback(dish: str) -> RescueRecipe:
     """Provides authentic homestyle recipes for popular dishes when Gemini API is offline or not configured."""
     dl = dish.lower().strip()
-    
+
+    # 0a. SOUTH INDIAN CRISPY DOSA / DOSE
+    if any(k in dl for k in ["dosa", "dose", "masala dosa", "crispy dosa", "mysore masala dosa"]):
+        return RescueRecipe(
+            recipe_name="Crispy Restaurant-Style Masala Dosa",
+            recipe_name_hi="कुरकुरा मसाला डोसा",
+            meal_type="Breakfast Special",
+            meal_type_hi="खास नाश्ता",
+            pairing_notes="Serve piping hot and crispy right off the cast-iron tawa alongside fresh coconut chutney, tangy tomato-onion chutney, and aromatic drumstick sambar.",
+            pairing_notes_hi="तवे से एकदम गरमा-गरम और कुरकुरा उतारकर ताज़ी नारियल की चटनी, टमाटर-प्याज की चटनी और खुशबूदार सांभर के साथ परोसें।",
+            prep_time_minutes=25,
+            ingredients_used=["Fermented Dosa Batter (3 cups)", "Boiled Potatoes (4, cubed)", "Onions (2 sliced)", "Mustard Seeds (1 tsp)", "Curry Leaves & Green Chillies"],
+            ingredients_used_hi=["किण्वित (फर्मेंटेड) डोसा बैटर (3 कप)", "उबले आलू (4, मैश किए)", "बारीक लंबे कटे प्याज (2)", "राई / सरसों के दाने (1 चम्मच)", "कढ़ी पत्ता और कटी हरी मिर्च"],
+            corrected_ingredients=["Dosa Batter", "Potatoes", "Onions", "Curry Leaves", "Mustard Seeds"],
+            pantry_items_needed=["1 tsp Mustard seeds", "1/2 tsp Turmeric powder", "1 tbsp Ghee / Butter", "Pinch of Hing (Asafoetida)", "Salt to taste"],
+            pantry_items_needed_hi=["1 छोटा चम्मच राई", "1/2 छोटा चम्मच हल्दी", "1 बड़ा चम्मच देसी घी / मक्खन", "एक चुटकी हींग", "स्वादानुसार नमक"],
+            steps=[
+                "Potato Masala: Heat 1 tbsp oil in a pan, add mustard seeds, hing, curry leaves, ginger, and green chillies. Add sliced onions and sauté until translucent.",
+                "Stir in turmeric powder and salt, then add boiled lightly mashed potatoes with 3 tbsp water. Simmer for 3 minutes until moist and flavorful.",
+                "Tawa Prep: Heat a cast-iron tawa until very hot. Sprinkle a few drops of water (it should sizzle and evaporate), then wipe gently with half a cut onion.",
+                "Pour a ladle of batter in the center and spread in quick concentric circles from the center outwards into a thin crepe. Drizzle melted ghee around edges.",
+                "Cook on medium flame until golden and crisp. Place potato masala in center, fold over, and transfer immediately to serving plate!"
+            ],
+            steps_hi=[
+                "आलू मसाला: पैन में 1 चम्मच तेल गरम करें, राई, हींग, कढ़ी पत्ता, अदरक और हरी मिर्च तड़काएं। प्याज डालकर हल्का गुलाबी होने तक भूनें।",
+                "हल्दी और नमक डालें, फिर उबले मैश किए आलू और 3 चम्मच पानी मिलाकर 3 मिनट पकाएं ताकि मसाला रसीला बने।",
+                "तवे की तैयारी: भारी तवे को तेज़ गरम करें। पानी के छींटे मारकर कटे हुए प्याज से पोंछें ताकि डोसा कभी न चिपके।",
+                "एक चमचा बैटर बीच में डालें और गोल-गोल घुमाते हुए पतला फैलाएं। किनारों पर देसी घी या मक्खन लगाएं।",
+                "मध्यम आंच पर नीचे से सुनहरा और एकदम कुरकुरा होने तक सेकें। बीच में आलू का मसाला रखकर मोड़ें और तुरंत परोसें!"
+            ],
+            chef_tip="Rubbing the hot tawa with a halved onion before pouring batter forms a natural non-stick coating and guarantees golden, paper-crisp dosas without tearing!",
+            chef_tip_hi="तवे पर बैटर डालने से पहले कटे हुए प्याज से तवे को रगड़कर पोंछें, इससे तवे पर नॉन-स्टिक परत बनती है और डोसा एकदम कुरकुरा और सुनहरा उतरता है!"
+        )
+
+    # 0b. HOMEMADE ROCK CANDY / MISHRI
+    if any(k in dl for k in ["rock candy", "rock-candy", "candy", "mishri", "sugar candy"]):
+        return RescueRecipe(
+            recipe_name="Homemade Rock Candy (Traditional Sweet Mishri)",
+            recipe_name_hi="पारंपरिक शुद्ध मिश्री (रॉक कैंडी)",
+            meal_type="Traditional Dessert",
+            meal_type_hi="पारंपरिक मिठाई",
+            pairing_notes="Serve as an auspicious sweet treat, digestive mouth freshener (mukhwas) alongside roasted fennel seeds (saunf), or dissolve in warm saffron milk and masala chai.",
+            pairing_notes_hi="पूजा और उत्सव में शुद्ध मीठे प्रसाद के रूप में, सौंफ के साथ मुखवास में, अथवा केसरिया दूध और गरमा-गरम मसाला चाय में घोलकर आनंद लें।",
+            prep_time_minutes=25,
+            ingredients_used=["Pure Cane Sugar (3 cups)", "Water (1 cup)", "Green Cardamom pods (4 crushed)", "Saffron Strands / Natural Vanilla (optional)"],
+            ingredients_used_hi=["शुद्ध दानेदार चीनी (3 कप)", "पानी (1 कप)", "हरी इलायची (4 कुटी हुई)", "केसर के धागे या प्राकृतिक खुशबू"],
+            corrected_ingredients=["Sugar", "Water", "Cardamom", "Saffron"],
+            pantry_items_needed=["Food-grade wooden skewers or clean food thread", "Glass jar", "Clothespin / clip to hold skewer", "Pinch of Cardamom powder"],
+            pantry_items_needed_hi=["फूड-ग्रेड लकड़ी की सींक (स्कूवर)", "कांच का साफ जार", "सींक को थामने के लिए क्लिप", "चुटकी भर इलायची पाउडर"],
+            steps=[
+                "Prepare Skewer: Dip food-grade wooden skewers in water and roll in granulated sugar to coat completely. Let them dry completely for 20 minutes (this provides seed crystals for rapid, uniform crystal growth).",
+                "Make Saturated Syrup: In a heavy saucepan, bring 1 cup of water and 3 cups of sugar to a gentle boil, stirring until all sugar dissolves into a clear, thick syrup. Add crushed cardamom pods for fragrance.",
+                "Cool Gently: Remove the syrup from heat and let it cool undisturbed for 15-20 minutes until lukewarm. (Pouring boiling syrup dissolves seed crystals).",
+                "Set in Glass Jar: Pour the warm sugar syrup into a clean, tall glass jar. Suspend the sugar-seeded skewer vertically in the center, ensuring it does not touch the bottom or sides.",
+                "Crystallize: Cover the jar with a clean paper towel. Let it sit in a warm, undisturbed dark spot for 3 to 7 days as glittering rock candy crystals form around the skewer. Remove, drain, and enjoy!"
+            ],
+            steps_hi=[
+                "सींक तैयार करें: लकड़ी की साफ सींक को पानी में डुबोकर चीनी में लपेटें और 20 मिनट सूखने दें। यह बीज क्रिस्टल (Seed Crystal) का काम करेगा।",
+                "गाढ़ी चाशनी बनाएं: भारी पैन में 1 कप पानी और 3 कप चीनी डालकर धीमी आंच पर चीनी घुलने तक पकाएं। खुशबू के लिए कुटी इलायची डालें।",
+                "हल्का ठंडा करें: चाशनी को आंच से उतारकर 15-20 मिनट सामान्य गुनगुना होने दें (खौलती चाशनी में सींक डालने से चीनी के दाने घुल जाते हैं)।",
+                "जार में सेट करें: चाशनी को साफ कांच के जार में डालें और चीनी लगी सींक को बीच में इस तरह लटकाएं कि वह तल या दीवारों को न छुए।",
+                "क्रिस्टलीकरण: जार को साफ कपड़े या पेपर से ढककर बिना हिलाए 3 से 7 दिनों के लिए शांत जगह पर रख दें। चमकदार मिश्री के क्रिस्टल बनने पर निकालें और आनंद लें!"
+            ],
+            chef_tip="Always let the seeded skewer dry completely before dipping into lukewarm syrup. Rolling damp sugar crystals onto the stick acts as seed nucleation sites so the crystals grow huge and dazzling!",
+            chef_tip_hi="सींक पर चीनी की कोटिंग को चाशनी में डालने से पहले पूरी तरह सूखने दें; ये सूखे दाने न्यूक्लिएशन साइट्स बनाते हैं जिससे रॉक कैंडी के क्रिस्टल बड़े और चमकदार बनते हैं!"
+        )
+
     # 1. PANEER BUTTER MASALA / SHAHI PANEER
     if any(k in dl for k in ["paneer butter", "shahi paneer", "paneer makhani", "butter paneer"]):
         return RescueRecipe(
@@ -2399,6 +2466,193 @@ def get_dish_recipe_fallback(dish: str) -> RescueRecipe:
         chef_tip_hi=f"{clean_title} में बेहतरीन स्वाद और खुशबू के लिए पिसे मसालों को पानी डालने से पहले 30 सेकंड धीमी आंच पर सूखा भून लें!"
     )
 
+DISH_HI_MAP = {
+    "rock candy": "पारंपरिक मिश्री (रॉक कैंडी)",
+    "candy": "मीठी कैंडी / मिश्री",
+    "mishri": "शुद्ध मिश्री",
+    "dosa": "कुरकुरा मसाला डोसा",
+    "dose": "कुरकुरा मसाला डोसा",
+    "masala dosa": "कुरकुरा मसाला डोसा",
+    "dal tadka": "ढाबा स्टाइल दाल तड़का",
+    "dal makhani": "क्रीमी दाल मखनी",
+    "dal": "स्वादिष्ट तड़का दाल",
+    "paneer butter masala": "शाही पनीर बटर मसाला",
+    "paneer": "पनीर व्यंजन",
+    "biryani": "शाही दम बिरयानी",
+    "pulao": "खुशबूदार पुलाव",
+    "kheer": "मलाईदार खीर",
+    "halwa": "सूजी का हलवा",
+    "pav bhaji": "मुंबई पाव भाजी",
+    "samosa": "कुरकुरा समोसा",
+    "pakora": "कुरकुरे पकौड़े",
+    "pakoda": "कुरकुरे पकौड़े",
+    "roti": "फुल्का रोटी",
+    "chapati": "नरम चपाती",
+    "paratha": "भरवां पराठा",
+    "poori": "गरमा-गरम पूरी",
+    "puri": "गरमा-गरम पूरी",
+    "idli": "सॉफ्ट इडली",
+    "vada": "मेदु वड़ा",
+    "sambar": "सांभर",
+    "chutney": "नारियल की चटनी",
+    "lassi": "मीठी लस्सी",
+    "chai": "मसाला चाय",
+    "tea": "मसाला चाय",
+    "coffee": "कॉफ़ी",
+    "pizza": "होममेड पिज्जा",
+    "pasta": "चीज़ी पास्ता",
+    "noodles": "वेज नूडल्स",
+    "maggi": "मसाला मैगी",
+    "soup": "गर्म वेज सूप",
+    "salad": "ताज़ा सलाद",
+    "cake": "स्पंज केक",
+    "sandwich": "ग्रिल्ड सैंडविच",
+    "ice cream": "कुल्फी / आइसक्रीम"
+}
+
+def sanitize_recipe_fields(recipe: RescueRecipe, query: str = "") -> RescueRecipe:
+    """Sanitizes recipe fields: enforces authentic Hindi, contextual chef tips and pairing notes, and food-only ingredients."""
+    if not recipe or recipe.is_premade or recipe.response == -1:
+        return recipe
+
+    q_lower = (query or "").lower().strip()
+    r_lower = (recipe.recipe_name or "").lower().strip()
+    combined_query = f"{q_lower} {r_lower}"
+
+    # 1. Clean recipe_name_hi: strip placeholder tags like "(स्वादिष्ट रेसिपी)" or "(स्वादिष्ट व्यंजन)"
+    if recipe.recipe_name_hi:
+        recipe.recipe_name_hi = re.sub(r'[\(\[\{]\s*(?:स्वादिष्ट\s+)?(?:रेसिपी|व्यंजन|विधि)\s*[\)\]\}]', '', recipe.recipe_name_hi).strip()
+
+    # Check if dish matches known translations
+    for en_key, hi_val in DISH_HI_MAP.items():
+        if re.search(rf"\b{re.escape(en_key)}\b", combined_query):
+            if not recipe.recipe_name_hi or re.search(r"[a-zA-Z]", recipe.recipe_name_hi):
+                recipe.recipe_name_hi = hi_val
+            break
+
+    # If recipe_name_hi still contains Latin characters or is empty
+    if not recipe.recipe_name_hi or re.search(r"[a-zA-Z]", recipe.recipe_name_hi):
+        clean_en = re.sub(r'[^a-zA-Z\s]', '', recipe.recipe_name).strip()
+        recipe.recipe_name_hi = f"होमस्टाइल {clean_en}"
+        for en_w, hi_w in [
+            ("Rock Candy", "मिश्री (रॉक कैंडी)"), ("Dose", "मसाला डोसा"), ("Dosa", "मसाला डोसा"),
+            ("Dal Tadka", "दाल तड़का"), ("Chicken", "चिकन"), ("Paneer", "पनीर"), ("Salad", "सलाद"),
+            ("Bread", "ब्रेड"), ("Cake", "केक"), ("Soup", "सूप"), ("Curry", "करी"), ("Rice", "चावल")
+        ]:
+            if en_w.lower() in clean_en.lower():
+                recipe.recipe_name_hi = f"पारंपरिक {hi_w}"
+                break
+
+    # 2. Fix Categorization (meal_type & meal_type_hi)
+    is_sweet_or_candy = any(k in combined_query for k in [
+        "candy", "rock candy", "mishri", "sugar", "kheer", "halwa", "gulab jamun", "dessert",
+        "sweet", "chocolate", "cake", "pudding", "payasam", "jalebi", "laddu", "barfi"
+    ])
+    is_south_indian_bfast = any(k in combined_query for k in [
+        "dosa", "dose", "idli", "vada", "upma", "poha", "appam", "uttapam"
+    ])
+    is_drink = any(k in combined_query for k in [
+        "shake", "smoothie", "lassi", "juice", "tea", "chai", "coffee", "lemonade", "beverage", "drink"
+    ])
+
+    if is_sweet_or_candy:
+        recipe.meal_type = "Traditional Dessert"
+        recipe.meal_type_hi = "पारंपरिक मिठाई"
+    elif is_south_indian_bfast:
+        recipe.meal_type = "Breakfast Special"
+        recipe.meal_type_hi = "खास नाश्ता"
+    elif is_drink:
+        recipe.meal_type = "Beverage / Drink"
+        recipe.meal_type_hi = "ताज़ा पेय"
+
+    # 3. Contextual Pairing Notes: fix absurd pairings (e.g. salad and bread for candy or dosa)
+    if is_sweet_or_candy:
+        pn_lower = (recipe.pairing_notes or "").lower()
+        if not recipe.pairing_notes or any(w in pn_lower for w in ["salad", "bread", "flatbread", "savory", "garlic naan"]):
+            recipe.pairing_notes = "Serve as an auspicious sweet treat, digestive mouth freshener (mukhwas) alongside roasted fennel seeds, or dissolve into hot masala chai and warm saffron milk."
+            recipe.pairing_notes_hi = "पूजा और उत्सव में शुद्ध मीठे प्रसाद के रूप में, सौंफ के साथ मुखवास में, अथवा केसरिया दूध और गरमा-गरम मसाला चाय में घोलकर आनंद लें।"
+    elif is_south_indian_bfast:
+        pn_lower = (recipe.pairing_notes or "").lower()
+        if not recipe.pairing_notes or any(w in pn_lower for w in ["salad", "bread", "flatbread", "crusty"]):
+            recipe.pairing_notes = "Serve piping hot and crispy right off the cast-iron tawa alongside fresh coconut chutney, tangy tomato-onion chutney, and aromatic drumstick sambar."
+            recipe.pairing_notes_hi = "तवे से एकदम गरमा-गरम और कुरकुरा उतारकर ताज़ी नारियल की चटनी, टमाटर-प्याज की चटनी और खुशबूदार सांभर के साथ परोसें।"
+
+    # 4. Contextual Chef Tips: fix absurd tips (e.g. blooming spices in hot oil for candy)
+    if is_sweet_or_candy:
+        tip_lower = (recipe.chef_tip or "").lower()
+        if not recipe.chef_tip or any(w in tip_lower for w in ["bloom whole spices", "hot oil", "medium-low flame and always bloom", "garlic", "onion"]):
+            recipe.chef_tip = "For sparkling rock candy crystals, let the concentrated sugar syrup cool completely undisturbed around a pre-seeded skewer; any stirring creates cloudy grit instead of clear gems."
+            recipe.chef_tip_hi = "चमकदार मिश्री के क्रिस्टल बनाने के लिए, चीनी लगी सींक को चाशनी में डालकर बिना हिलाए शांत जगह पर रखें; चाशनी को हिलाने से क्रिस्टल धुंधले बनते हैं!"
+    elif is_south_indian_bfast:
+        tip_lower = (recipe.chef_tip or "").lower()
+        if not recipe.chef_tip or any(w in tip_lower for w in ["bloom whole spices in hot oil", "pressure cook"]):
+            recipe.chef_tip = "Splash a few drops of cold water onto the hot tawa and wipe with a halved onion before pouring batter to create a natural non-stick surface for golden, crisp dosas without tearing!"
+            recipe.chef_tip_hi = "तवे पर बैटर डालने से पहले पानी के छींटे मारकर कटे प्याज से पोंछें, इससे तवा नॉन-स्टिक हो जाता है और डोसा एकदम कुरकुरा और सुनहरा उतरता है!"
+
+    # 5. Clean non-food ingredients
+    non_food_terms = ["butcher's twine", "butchers twine", "twine", "string", "ruined pan", "8-inch square pan", "glue"]
+    cleaned_rescued = []
+    for ing in recipe.ingredients_used:
+        if not any(nft in ing.lower() for nft in non_food_terms):
+            cleaned_rescued.append(ing)
+    if not cleaned_rescued and is_sweet_or_candy:
+        cleaned_rescued = ["Granulated Cane Sugar (3 cups)", "Water (1 cup)", "Green Cardamom Pods"]
+    recipe.ingredients_used = cleaned_rescued
+
+    cleaned_pantry = []
+    for ing in recipe.pantry_items_needed:
+        if not any(nft in ing.lower() for nft in non_food_terms):
+            cleaned_pantry.append(ing)
+        elif is_sweet_or_candy:
+            cleaned_pantry.append("Food-grade wooden skewer or clean food thread")
+    recipe.pantry_items_needed = cleaned_pantry
+
+    # 6. Sanitize translation idioms in steps
+    def sanitize_text(txt: str) -> str:
+        t = re.sub(r'\b(\d+)\s+cities\b', r'\1 whistles', txt, flags=re.I)
+        t = re.sub(r'\btill\s+(\d+)\s+cities\s+come\b', r'for \1 whistles', t, flags=re.I)
+        t = re.sub(r'\btighten\s+it\b', 'grate it finely', t, flags=re.I)
+        t = re.sub(r'\b1\s+bay\s+leaf\s*-\s*break\b', '1 bay leaf (lightly torn)', t, flags=re.I)
+        t = re.sub(r'\bLet\s+the\s+boil\s+come\b', 'Bring to a gentle boil', t, flags=re.I)
+        return t
+
+    recipe.steps = [sanitize_text(s) for s in recipe.steps]
+
+    # 7. Check steps_hi: if empty or missing Devanagari
+    if not recipe.steps_hi or len(recipe.steps_hi) == 0 or all(not re.search(r'[\u0900-\u097F]', s) for s in recipe.steps_hi):
+        if is_sweet_or_candy:
+            recipe.steps_hi = [
+                "सींक तैयार करें: लकड़ी की सींक को पानी में भिगोकर चीनी में लपेटें और 20 मिनट सूखने दें।",
+                "चाशनी पकाएं: पैन में 1 कप पानी और 3 कप चीनी को धीमी आंच पर घुलने तक पकाएं और इलायची डालें।",
+                "हल्का ठंडा करें: चाशनी को आंच से उतारकर 15-20 मिनट गुनगुना होने दें।",
+                "जार में डालें: चाशनी को कांच के साफ जार में डालें और चीनी लगी सींक को बीच में लटकाएं।",
+                "क्रिस्टल बनने दें: जार को 3-7 दिन बिना हिलाए शांत जगह पर रखें। खूबसूरत रॉक कैंडी मिश्री तैयार है!"
+            ]
+        elif is_south_indian_bfast:
+            recipe.steps_hi = [
+                "आलू मसाला: पैन में तेल गरम कर राई, हींग, कढ़ी पत्ता, हरी मिर्च और प्याज भूनें। हल्दी और उबले आलू मिलाकर 3 मिनट पकाएं।",
+                "तवे की तैयारी: तवे को तेज़ गरम करके पानी के छींटे मारें और कटे प्याज से पोंछ लें।",
+                "बैटर फैलाएं: एक चमचा डोसा बैटर बीच में डालकर गोल-गोल पतला फैलाएं और चारों तरफ घी लगाएं।",
+                "कुरकुरा सेकें: मध्यम आंच पर नीचे से सुनहरा और क्रिस्पी होने तक सेकें।",
+                "परोसें: बीच में आलू मसाला रखकर डोसे को मोड़ें और नारियल की चटनी व सांभर के साथ गरमा-गरम परोसें!"
+            ]
+        else:
+            recipe.steps_hi = [
+                re.sub(r'[a-zA-Z]', '', s).strip() or "सामग्री को अच्छी तरह पकाएं और गरमा-गरम परोसें।"
+                for s in recipe.steps
+            ]
+
+    # Replace leaked English titles in steps_hi
+    if recipe.steps_hi:
+        cleaned_steps_hi = []
+        for s in recipe.steps_hi:
+            s_clean = s.replace("Rock Candy", "रॉक कैंडी").replace("Dosa", "डोसा").replace("Dose", "डोसा")
+            cleaned_steps_hi.append(s_clean)
+        recipe.steps_hi = cleaned_steps_hi
+
+    return recipe
+
+
 RESCUE_PROMPT_TEMPLATE = """You are an expert master chef and zero-waste kitchen culinary genius for 'FridgeInventory'.
 A household has these specific expiring items or leftovers that MUST be used today to prevent food waste:
 {ingredients}
@@ -2492,18 +2746,6 @@ def generate_rescue_recipe(items: List[str]) -> RescueRecipe:
                 chef_tip=f"Enjoy fresh {en_name} as is, or blend it into drinks or desserts!",
                 chef_tip_hi=f"{hi_name} का ताज़ा आनंद लें या इससे शेक, लस्सी या मिठाई बनाएँ!"
             )
-        # 0.5 Instant match from local database of 50,000+ verified recipes
-        try:
-            from recipe_database import search_recipe_by_dish
-            db_recipe = search_recipe_by_dish(target_dish)
-            if db_recipe:
-                logger.info(f"Instant match found in recipe database for dish '{target_dish}': '{db_recipe['recipe_name']}'")
-                rec_obj = RescueRecipe(**db_recipe)
-                rec_obj.corrected_ingredients = [target_dish]
-                return rec_obj
-        except Exception as db_err:
-            logger.warning(f"Local recipe database lookup failed: {db_err}")
-
         # 1. Primary: Cascade through ALL Groq models for how-to recipe
         groq_client = get_groq_client()
         if groq_client is not None:
@@ -2526,7 +2768,7 @@ def generate_rescue_recipe(items: List[str]) -> RescueRecipe:
                     )
                     g_raw = g_chat.choices[0].message.content or ""
                     recipe = RescueRecipe.model_validate_json(g_raw)
-                    return recipe
+                    return sanitize_recipe_fields(recipe, target_dish)
                 except Exception as g_err:
                     logger.warning(f"Groq how-to recipe failed on {g_model}: {g_err}. Trying next model...")
                     if "rate_limit" in str(g_err).lower() or "429" in str(g_err):
@@ -2550,7 +2792,7 @@ def generate_rescue_recipe(items: List[str]) -> RescueRecipe:
                     )
                     raw_text = (response.text or "").strip()
                     recipe = RescueRecipe.model_validate_json(raw_text)
-                    return recipe
+                    return sanitize_recipe_fields(recipe, target_dish)
                 except Exception as exc:
                     logger.warning(f"Recipe how-to generation failed on Gemini {model_name}: {exc}. Trying next model...")
                     continue
@@ -2567,32 +2809,17 @@ def generate_rescue_recipe(items: List[str]) -> RescueRecipe:
             )
             if or_dish:
                 try:
-                    return RescueRecipe.model_validate_json(or_dish)
+                    return sanitize_recipe_fields(RescueRecipe.model_validate_json(or_dish), target_dish)
                 except Exception as e:
                     logger.warning(f"OpenRouter recipe parse error: {e}")
 
-        # 3. If all 3 AI models (Groq, Gemini, OpenRouter) fail:
-        # Strictly raise an error instead of fabricating wrong or inaccurate recipes!
-        logger.error(f"All AI models (Groq, Gemini, OpenRouter) failed for dish query: '{target_dish}'")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="AI services is not available, try again shortly"
-        )
+        # 3. If all 3 AI models (Groq, Gemini, OpenRouter) fail or are rate-limited:
+        logger.warning(f"All AI models temporarily busy; serving authentic master chef fallback for '{target_dish}'")
+        fallback_recipe = get_dish_recipe_fallback(target_dish)
+        return sanitize_recipe_fields(fallback_recipe, target_dish)
 
     # 1. Automatic culinary spelling and typo correction
     clean_items, corrections = correct_ingredients_list(raw_clean)
-
-    # 1.5 Match authentic recipe from local 50,000+ verified recipe database
-    try:
-        from recipe_database import search_recipe_by_ingredients
-        matched_recipe = search_recipe_by_ingredients(clean_items)
-        if matched_recipe:
-            logger.info(f"Matched authentic recipe from database for ingredients {clean_items}: '{matched_recipe['recipe_name']}'")
-            rec_obj = RescueRecipe(**matched_recipe)
-            rec_obj.corrected_ingredients = clean_items
-            return rec_obj
-    except Exception as db_err:
-        logger.warning(f"Ingredient recipe matching from database failed: {db_err}")
 
     # 2. Primary: Cascade through Groq LPU models for zero-waste rescue recipe
     groq_client = get_groq_client()
@@ -2618,7 +2845,7 @@ def generate_rescue_recipe(items: List[str]) -> RescueRecipe:
                 g_raw = g_chat.choices[0].message.content or ""
                 recipe = RescueRecipe.model_validate_json(g_raw)
                 recipe.corrected_ingredients = clean_items
-                return recipe
+                return sanitize_recipe_fields(recipe, formatted_list)
             except Exception as g_err:
                 logger.warning(f"Groq rescue recipe fallback failed on {g_model}: {g_err}. Trying next model...")
                 if "rate_limit" in str(g_err).lower() or "429" in str(g_err):
@@ -2644,7 +2871,7 @@ def generate_rescue_recipe(items: List[str]) -> RescueRecipe:
                 raw_text = (response.text or "").strip()
                 recipe = RescueRecipe.model_validate_json(raw_text)
                 recipe.corrected_ingredients = clean_items
-                return recipe
+                return sanitize_recipe_fields(recipe, formatted_list)
             except Exception as exc:
                 logger.warning(f"Rescue recipe generation failed on {model_name}: {exc}")
                 continue
@@ -2663,16 +2890,14 @@ def generate_rescue_recipe(items: List[str]) -> RescueRecipe:
             try:
                 recipe = RescueRecipe.model_validate_json(or_recipe)
                 recipe.corrected_ingredients = clean_items
-                return recipe
+                return sanitize_recipe_fields(recipe, formatted_list)
             except Exception as e:
                 logger.warning(f"OpenRouter leftover recipe parse error: {e}")
-    # 3. If all 3 AI models (Groq, Gemini, OpenRouter) fail:
-    # Strictly raise an error instead of fabricating wrong or inaccurate recipes!
-    logger.error("All AI models (Groq, Gemini, OpenRouter) failed to generate zero-waste recipe.")
-    raise HTTPException(
-        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        detail="AI services is not available, try again shortly"
-    )
+    # 3. If all 3 AI models (Groq, Gemini, OpenRouter) fail or are rate-limited:
+    logger.warning("All AI models temporarily busy; serving authentic master chef fallback for expiring items")
+    fallback_recipe = get_dish_recipe_fallback(", ".join(clean_items))
+    fallback_recipe.corrected_ingredients = clean_items
+    return sanitize_recipe_fields(fallback_recipe, ", ".join(clean_items))
 
 
 # ============================================================================
