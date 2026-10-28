@@ -110,10 +110,15 @@ def clean_search_term(s: str) -> str:
     s = s.strip().lower()
     s = re.sub(r"\b(how\s+to\s+make|how\s+to\s+cook|recipe\s+of|recipe\s+for|vidhi|kaise\s+banaye|make|cook|banao|banaye)\b", "", s).strip()
     s = re.sub(r"\b(fresh|raw|ripe|cut|chopped|boiled|cooked|piece|pieces|curry|sabzi)\b", "", s).strip()
+    s = re.sub(r"\b(doses|dosai)\b", "dose", s)
     return s.strip(" ?.,!:")
 
 # Common ingredient synonyms for smart matching
 SYNONYM_MAP: Dict[str, List[str]] = {
+    "dose": ["dosa", "dose", "masala dosa"],
+    "dosa": ["dosa", "dose", "masala dosa"],
+    "dosai": ["dosa", "dose", "masala dosa"],
+    "dal tadka": ["dal tadka", "yellow dal", "tadka dal"],
     "palak": ["palak", "spinach"],
     "spinach": ["palak", "spinach"],
     "paneer": ["paneer", "cottage cheese", "cheese"],
@@ -131,7 +136,7 @@ SYNONYM_MAP: Dict[str, List[str]] = {
     "okra": ["bhindi", "okra"],
     "baingan": ["baingan", "eggplant", "brinjal"],
     "eggplant": ["baingan", "eggplant", "brinjal"],
-    "dal": ["dal", "lentil", "lentils", "toor dal", "moong dal"],
+    "dal": ["dal", "lentil", "lentils", "toor dal", "moong dal", "dal tadka"],
     "rice": ["rice", "chawal", "basmati"],
     "peas": ["peas", "matar", "green peas"],
     "matar": ["peas", "matar", "green peas"],
@@ -164,6 +169,15 @@ def search_recipe_by_dish(dish_query: str) -> Optional[Dict[str, Any]]:
         # 1. Exact slug match (< 0.1ms)
         cur.execute("SELECT * FROM recipes WHERE slug = ? LIMIT 1;", (slug,))
         row = cur.fetchone()
+        if not row and slug in ("dose", "masala-dose", "crispy-dose"):
+            cur.execute("SELECT * FROM recipes WHERE slug IN ('dose', 'dosa') ORDER BY CASE WHEN slug = 'dose' THEN 0 ELSE 1 END LIMIT 1;")
+            row = cur.fetchone()
+        if not row and slug in ("dosa", "masala-dosa", "crispy-dosa"):
+            cur.execute("SELECT * FROM recipes WHERE slug IN ('dosa', 'dose') ORDER BY CASE WHEN slug = 'dosa' THEN 0 ELSE 1 END LIMIT 1;")
+            row = cur.fetchone()
+        if not row and slug in ("dal-tadka", "daltadka", "dal-fry"):
+            cur.execute("SELECT * FROM recipes WHERE slug = 'dal-tadka' LIMIT 1;")
+            row = cur.fetchone()
         if row:
             conn.close()
             return row_to_recipe_dict(row)
