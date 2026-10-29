@@ -1,13 +1,3 @@
----
-title: FridgeInventory
-emoji: 🧊
-colorFrom: blue
-colorTo: green
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # FridgeInventory
 
 A full-stack kitchen inventory app built to keep track of groceries, scan food items using Gemini AI, and send real-time expiration alerts straight to your devices before anything goes to waste.
