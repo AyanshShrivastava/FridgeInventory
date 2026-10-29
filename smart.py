@@ -137,6 +137,18 @@ STOP_WORDS = ADD_WORDS | TAKE_WORDS | WASTE_WORDS | ALL_WORDS | {
     "किलो", "ग्राम", "लीटर", "पैकेट", "नग",
 }
 
+EMOJI_REGEX = re.compile(
+    r"[\U00010000-\U0010ffff\u2600-\u26ff\u2700-\u27bf\ufe0f\u200d\u2300-\u23ff\u2b50\u2b55\u203c\u2049\u25aa-\u25fe]",
+    flags=re.UNICODE
+)
+
+def strip_emojis(text: Optional[str]) -> str:
+    """Completely strip all emojis, smileys, and pictograms from AI-generated text."""
+    if not text:
+        return ""
+    cleaned = EMOJI_REGEX.sub("", str(text))
+    return re.sub(r" +", " ", cleaned).strip()
+
 def hash_pin(pin: str, salt: str) -> str:
     """PBKDF2 HMAC SHA-256 PIN hashing with per-fridge salt."""
     return hashlib.pbkdf2_hmac("sha256", pin.encode(), bytes.fromhex(salt), PIN_ITERATIONS).hex()
@@ -555,7 +567,16 @@ class FoodItemVerdict(BaseModel):
     category: FoodCategory = Field(default=FoodCategory.COOKED_DISH, description="Culinary category.")
     shelf_life_days: int = Field(default=2, description="Estimated shelf life days for fresh items/produce/cooked food. Set to 0 if packaged item requiring printed expiry date.")
     requires_expiry_date: bool = Field(default=False, description="Set to true ONLY for manufactured, packaged goods, sealed commercial snacks/drinks/cans that have printed expiry dates. Set to false for fresh produce, fruits, fresh milk, vegetables, cooked meals, dishes made before.")
-    storage_tip: str = Field(default="", description="Practical household refrigerator storage advice.")
+    storage_tip_en: str = Field(default="", description="Practical household refrigerator storage advice in 100% pure English text without emojis.")
+    storage_tip_hi: str = Field(default="", description="Practical household refrigerator storage advice in 100% pure Hindi Devanagari script without emojis.")
+
+    @model_validator(mode="before")
+    @classmethod
+    def handle_legacy_storage_tip(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "storage_tip" in data and not data.get("storage_tip_en"):
+                data["storage_tip_en"] = data["storage_tip"]
+        return data
 
 
 class MultiFoodClassificationVerdict(BaseModel):
@@ -567,12 +588,21 @@ class MultiFoodClassificationVerdict(BaseModel):
 class FoodClassificationVerdict(BaseModel):
     is_food: bool = Field(description="True if this is an edible kitchen food, drink, grocery, produce, or cooked dish.")
     corrected_item: str = Field(default="", description="The item the user meant, spelled correctly in English.")
-    name_en: str = Field(default="", description="Clean, standardized English food name. Empty if not food.")
-    name_hi: str = Field(default="", description="Clean Hindi name in Devanagari script. Empty if not food.")
+    name_en: str = Field(default="", description="Clean, standardized English food name in pure English text without emojis. Empty if not food.")
+    name_hi: str = Field(default="", description="Clean Hindi name in 100% pure Devanagari script without emojis. Empty if not food.")
     category: FoodCategory = Field(default=FoodCategory.NOT_FOOD, description="Culinary category.")
     shelf_life_days: int = Field(default=0, description="Estimated shelf life in days in an Indian kitchen/fridge. 0 if expiry date required or not food.")
     requires_expiry_date: bool = Field(default=False, description="True for branded, factory-packaged, sealed, or commercial dairy products where printed label date is required.")
-    storage_tip: str = Field(default="", description="One practical tip for storing this item properly in an Indian kitchen.")
+    storage_tip_en: str = Field(default="", description="One practical tip for storing this item properly in an Indian kitchen in 100% pure English text without emojis.")
+    storage_tip_hi: str = Field(default="", description="One practical tip for storing this item properly in an Indian kitchen in 100% pure Hindi Devanagari script without emojis.")
+
+    @model_validator(mode="before")
+    @classmethod
+    def handle_legacy_storage_tip(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "storage_tip" in data and not data.get("storage_tip_en"):
+                data["storage_tip_en"] = data["storage_tip"]
+        return data
 
 
 class ClassifyRequest(BaseModel):
@@ -686,6 +716,8 @@ class InventoryItemCreate(BaseModel):
     requires_expiry_date: bool = False
     expiry_date: Optional[str] = None  # Format: YYYY-MM-DD
     storage_tip: str = ""
+    storage_tip_en: str = ""
+    storage_tip_hi: str = ""
 
 
 class InventoryItem(BaseModel):
@@ -700,7 +732,9 @@ class InventoryItem(BaseModel):
     is_expired: bool
     is_expiring_soon: bool
     requires_expiry_date: bool
-    storage_tip: str
+    storage_tip: str = ""
+    storage_tip_en: str = ""
+    storage_tip_hi: str = ""
     last_synced_at: Optional[str] = None
 
 
@@ -711,6 +745,8 @@ class ClassifyResponse(BaseModel):
     category: str = "cooked_dish"
     shelf_life_days: Optional[int] = None
     requires_expiry_date: bool = False
+    storage_tip_en: str = Field(default="", description="Storage advice in pure English")
+    storage_tip_hi: str = Field(default="", description="Storage advice in pure Hindi Devanagari script")
     storage_tip: str = ""
     message: Optional[str] = None
     message_hi: Optional[str] = None
@@ -720,6 +756,18 @@ class ClassifyResponse(BaseModel):
     needs_expiry: List[dict] = Field(default_factory=list)
     scanner_failed: bool = False
     manual_confirmation_required: bool = False
+
+    @model_validator(mode="before")
+    @classmethod
+    def sync_storage_tips(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            tip_en = data.get("storage_tip_en") or data.get("storage_tip") or ""
+            tip_hi = data.get("storage_tip_hi") or ""
+            data["storage_tip_en"] = tip_en
+            data["storage_tip_hi"] = tip_hi
+            if "storage_tip" not in data or not data["storage_tip"]:
+                data["storage_tip"] = tip_en or tip_hi
+        return data
 
 
 class AuthLoginRequest(BaseModel):
@@ -1022,7 +1070,9 @@ def update_fridge_time_and_inventory(fridge_id: Optional[str], tz_name: Optional
                 is_expired=is_expired,
                 is_expiring_soon=is_expiring_soon,
                 requires_expiry_date=bool(item.get("requires_expiry_date", False)),
-                storage_tip=item.get("storage_tip", ""),
+                storage_tip=item.get("storage_tip", "") or item.get("storage_tip_en", ""),
+                storage_tip_en=item.get("storage_tip_en", item.get("storage_tip", "")),
+                storage_tip_hi=item.get("storage_tip_hi", ""),
                 last_synced_at=now_str,
             )
         )
@@ -1099,6 +1149,9 @@ def save_fridge_inventory_item(fridge_id: str, item_data: InventoryItemCreate, c
         safe_name_en = "Fresh Food Item"
     safe_name_hi = (item_data.name_hi or "").strip() or safe_name_en
 
+    tip_en = (item_data.storage_tip_en or item_data.storage_tip or "").strip()
+    tip_hi = (item_data.storage_tip_hi or "").strip()
+
     payload = {
         "id": doc_id,
         "name_en": safe_name_en,
@@ -1111,7 +1164,9 @@ def save_fridge_inventory_item(fridge_id: str, item_data: InventoryItemCreate, c
         "is_expired": False,
         "is_expiring_soon": (0 <= days_left <= 2),
         "requires_expiry_date": item_data.requires_expiry_date,
-        "storage_tip": item_data.storage_tip.strip(),
+        "storage_tip": tip_en or tip_hi,
+        "storage_tip_en": tip_en,
+        "storage_tip_hi": tip_hi,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "last_synced_at": now_str,
     }
@@ -1141,7 +1196,9 @@ def save_fridge_inventory_item(fridge_id: str, item_data: InventoryItemCreate, c
         is_expired=False,
         is_expiring_soon=(0 <= days_left <= 2),
         requires_expiry_date=item_data.requires_expiry_date,
-        storage_tip=item_data.storage_tip.strip(),
+        storage_tip=tip_en or tip_hi,
+        storage_tip_en=tip_en,
+        storage_tip_hi=tip_hi,
         last_synced_at=now_str,
     )
 
@@ -1368,18 +1425,26 @@ def lookup_local_database(phrase: str) -> Optional[Tuple[int, str, str, bool]]:
 CLASSIFY_PROMPT_TEMPLATE = """You are an expert culinary AI for a household kitchen and fridge inventory app ("FridgeInventory").
 Analyze the food input phrase: "{query}"
 
+CRITICAL MANDATORY CONSTRAINTS:
+1. ABSOLUTELY ZERO EMOJIS: Do NOT output any emojis, smileys, icons, or pictograms in ANY string field. Output plain text only.
+2. STRICT LANGUAGE PURITY & SEPARATION:
+   - All English fields (`name_en`, `storage_tip_en`) MUST be 100% pure English text using the Latin alphabet. Never include Hindi words, Hinglish slang, or Devanagari characters in English fields.
+   - All Hindi fields (`name_hi`, `storage_tip_hi`) MUST be 100% pure Hindi in Devanagari script (हिंदी लिपि). Absolutely ZERO English words, Latin alphabet characters, or Hinglish text leaks (e.g., NEVER write "Refrigerator के vegetable drawer में रखें"; write pure Hindi like "फ्रिज के सब्जी वाले दराज में रखें" or "वायुरोधी डिब्बे में रखें").
+3. STRUCTURAL SEPARATION:
+   - You MUST separate storage tips into two distinct JSON keys: `storage_tip_en` (pure English) and `storage_tip_hi` (pure Hindi Devanagari).
+
 Classification Rules:
 1. Multi-word packaged, processed, or frozen items (CRITICAL):
    - If the user types a prepared commercial snack or frozen product (e.g. 'potato bites', 'banana chips', 'onion rings', 'french fries', 'cheese sticks', 'veggie fingers', 'potato wedges', 'maggi noodles', 'lays chips'), classify the ENTIRE phrase as the item.
    - NEVER truncate, simplify, or reduce a compound food product to its raw agricultural ingredient (e.g. NEVER classify 'potato bites' as raw 'Potato', or 'banana chips' as 'Banana').
    - For processed/packaged snacks or frozen goods: set category=snack_bakery or packaged_grocery, requires_expiry_date=true, and shelf_life_days=0.
 2. Spelling & Slang:
-   - Correct common speech-to-text slips or Hinglish transliterations (e.g. 'tamatar' -> 'Tomato', 'panir'/'paneer' -> 'Paneer', 'palak' -> 'Spinach', 'dahi' -> 'Curd / Dahi', 'bhindee' -> 'Okra (Bhindi)', 'amul makkhan' -> 'Amul Butter', 'lays' -> 'Lays Chips', 'chawal' -> 'Cooked Rice').
+   - Correct common speech-to-text slips or Hinglish transliterations (e.g. 'tamatar' -> 'Tomato', 'panir'/'paneer' -> 'Paneer', 'palak' -> 'Spinach', 'dahi' -> 'Curd', 'bhindee' -> 'Okra', 'amul makkhan' -> 'Amul Butter', 'lays' -> 'Lays Chips', 'chawal' -> 'Cooked Rice').
 3. is_food check:
    - Return is_food=true ONLY for edible/drinkable food, produce, dairy, meat/fish/poultry, eggs, grains, lentils, flours, spices, snacks, beverages, and cooked meals.
    - Return is_food=false for objects, electronics, medicines, cleaners, cosmetics, people, vehicles, furniture, or non-food words.
 4. If is_food is false:
-   - category=not_food, shelf_life_days=0, requires_expiry_date=false, name_en="", name_hi="", storage_tip="".
+   - category=not_food, shelf_life_days=0, requires_expiry_date=false, name_en="", name_hi="", storage_tip_en="", storage_tip_hi="".
 5. Expiry Date Requirement (requires_expiry_date):
    - Set requires_expiry_date=false for ALL everyday household food items, groceries, vegetables, fruits, dairy (fresh milk, paneer, curd, cheese, butter, cream), bread, eggs, meat, fish, cooked meals, rice, dal, flour, and staples. Give them an accurate, realistic shelf_life_days estimate (e.g., Milk: 3 days, Paneer: 3 days, Bread: 4 days, Curd: 5 days, Spinach: 3 days, Tomato: 6 days, Eggs: 14 days, Cooked Dal: 3 days) so the app automatically calculates their expiry and adds them immediately without interrupting the user!
    - Set requires_expiry_date=true ONLY for commercial sealed manufactured snacks and shelf-stable packaged foods that have printed manufacturer expiry dates (e.g., potato chips, canned goods, packaged frozen snacks like potato bites, sauce bottles, packaged biscuits).
@@ -1387,7 +1452,7 @@ Classification Rules:
 6. Shelf Life:
    - For fresh produce, dairy, bread, or cooked home dishes (requires_expiry_date=false), provide a realistic estimated shelf life in days in an Indian refrigerator.
    - For items with requires_expiry_date=true, set shelf_life_days=0 since the user must enter the printed package date.
-7. Provide name_en (English), name_hi (Hindi in Devanagari script), category, and a practical storage_tip for Indian climates.
+7. Provide name_en (pure English), name_hi (pure Devanagari Hindi), category, storage_tip_en (pure English storage advice, NO emojis), and storage_tip_hi (pure Hindi Devanagari storage advice, NO emojis).
 """
 
 def classify_food(phrase: str) -> ClassifyResponse:
@@ -1413,9 +1478,10 @@ def classify_food(phrase: str) -> ClassifyResponse:
                                 "You are a professional culinary AI food classifier for Indian household refrigerators. "
                                 "You analyze food names, translate to authentic Hindi Devanagari script, determine practical refrigerator shelf life, "
                                 "and decide whether the item is a manufactured packaged good requiring a printed expiry date. "
+                                "Never output emojis. English fields must be 100% pure English text, and Hindi fields must be 100% pure Devanagari script without mixed alphabet leaks. "
                                 "Output strictly valid JSON matching the schema with keys: "
                                 "is_food (bool), name_en (str), name_hi (str), category (str: 'dairy', 'produce', 'vegetable', 'fruit', 'cooked_dish', 'meat_fish_egg', 'grain_pulse_flour', 'snack_bakery', 'beverage', 'spice_condiment', 'packaged_grocery', 'oil_sugar_fat', or 'not_food'), "
-                                "shelf_life_days (int: 1-30 for fresh/cooked, 0 if packaged), requires_expiry_date (bool), storage_tip (str)."
+                                "shelf_life_days (int: 1-30 for fresh/cooked, 0 if packaged), requires_expiry_date (bool), storage_tip_en (str), storage_tip_hi (str)."
                             )
                         },
                         {
@@ -1438,19 +1504,25 @@ def classify_food(phrase: str) -> ClassifyResponse:
                         category="not_food",
                         shelf_life_days=None,
                         requires_expiry_date=False,
+                        storage_tip_en="",
+                        storage_tip_hi="",
                         storage_tip="",
                         message=f"'{clean_phrase}' does not appear to be a food or grocery item.",
                         analyzed_by=f"Groq LPU ({model_name})",
                     )
 
+                tip_en = strip_emojis(verdict.storage_tip_en or "Keep refrigerated or in a cool dry space.")
+                tip_hi = strip_emojis(verdict.storage_tip_hi or "फ्रिज में या ठंडी सूखी जगह पर रखें।")
                 return ClassifyResponse(
                     is_food=True,
-                    name_en=verdict.name_en,
-                    name_hi=verdict.name_hi or verdict.name_en,
+                    name_en=strip_emojis(verdict.name_en),
+                    name_hi=strip_emojis(verdict.name_hi or verdict.name_en),
                     category=verdict.category.value,
                     shelf_life_days=None if verdict.requires_expiry_date else verdict.shelf_life_days,
                     requires_expiry_date=verdict.requires_expiry_date,
-                    storage_tip=verdict.storage_tip or "Keep refrigerated or in a cool dry space.",
+                    storage_tip_en=tip_en,
+                    storage_tip_hi=tip_hi,
+                    storage_tip=tip_en,
                     analyzed_by=f"Groq LPU ({model_name})",
                 )
             except Exception as exc:
@@ -1482,19 +1554,25 @@ def classify_food(phrase: str) -> ClassifyResponse:
                         category="not_food",
                         shelf_life_days=None,
                         requires_expiry_date=False,
+                        storage_tip_en="",
+                        storage_tip_hi="",
                         storage_tip="",
                         message=f"'{clean_phrase}' does not appear to be a food or grocery item.",
                         analyzed_by="Gemini AI (Fallback)",
                     )
 
+                tip_en = strip_emojis(verdict.storage_tip_en or "Keep refrigerated or in a cool dry space.")
+                tip_hi = strip_emojis(verdict.storage_tip_hi or "फ्रिज में या ठंडी सूखी जगह पर रखें।")
                 return ClassifyResponse(
                     is_food=True,
-                    name_en=verdict.name_en,
-                    name_hi=verdict.name_hi or verdict.name_en,
+                    name_en=strip_emojis(verdict.name_en),
+                    name_hi=strip_emojis(verdict.name_hi or verdict.name_en),
                     category=verdict.category.value,
                     shelf_life_days=None if verdict.requires_expiry_date else verdict.shelf_life_days,
                     requires_expiry_date=verdict.requires_expiry_date,
-                    storage_tip=verdict.storage_tip or "Keep refrigerated or in a cool dry space.",
+                    storage_tip_en=tip_en,
+                    storage_tip_hi=tip_hi,
+                    storage_tip=tip_en,
                     analyzed_by="Gemini AI (Fallback)",
                 )
             except Exception as exc:
@@ -1509,8 +1587,9 @@ def classify_food(phrase: str) -> ClassifyResponse:
                     "role": "system",
                     "content": (
                         "You are a professional culinary AI food classifier for Indian household refrigerators. "
+                        "Never output emojis in any field. Output 100% pure English text in English fields and 100% pure Devanagari script in Hindi fields. "
                         "Output strictly valid JSON matching schema with keys: is_food (bool), name_en (str), name_hi (str), "
-                        "category (str), shelf_life_days (int), requires_expiry_date (bool), storage_tip (str)."
+                        "category (str), shelf_life_days (int), requires_expiry_date (bool), storage_tip_en (str), storage_tip_hi (str)."
                     )
                 },
                 {"role": "user", "content": CLASSIFY_PROMPT_TEMPLATE.format(query=clean_phrase)}
@@ -1522,14 +1601,18 @@ def classify_food(phrase: str) -> ClassifyResponse:
             try:
                 verdict = FoodClassificationVerdict.model_validate_json(or_res)
                 if verdict.is_food and verdict.name_en and verdict.category != FoodCategory.NOT_FOOD:
+                    tip_en = strip_emojis(verdict.storage_tip_en or "Keep refrigerated or in a cool dry space.")
+                    tip_hi = strip_emojis(verdict.storage_tip_hi or "फ्रिज में या ठंडी सूखी जगह पर रखें।")
                     return ClassifyResponse(
                         is_food=True,
-                        name_en=verdict.name_en,
-                        name_hi=verdict.name_hi or verdict.name_en,
+                        name_en=strip_emojis(verdict.name_en),
+                        name_hi=strip_emojis(verdict.name_hi or verdict.name_en),
                         category=verdict.category.value,
                         shelf_life_days=None if verdict.requires_expiry_date else verdict.shelf_life_days,
                         requires_expiry_date=verdict.requires_expiry_date,
-                        storage_tip=verdict.storage_tip or "Keep refrigerated or in a cool dry space.",
+                        storage_tip_en=tip_en,
+                        storage_tip_hi=tip_hi,
+                        storage_tip=tip_en,
                         analyzed_by="OpenRouter AI (Fallback)",
                     )
             except Exception as e:
@@ -1549,6 +1632,8 @@ def classify_food(phrase: str) -> ClassifyResponse:
             category=cat,
             shelf_life_days=None,
             requires_expiry_date=True,
+            storage_tip_en="Store in a cool dry place or refrigerate. Check printed package date.",
+            storage_tip_hi="ठंडी और सूखी जगह पर रखें या फ्रिज में रखें। पैकेट पर छपी तारीख जांचें।",
             storage_tip="Store in a cool dry place or refrigerate. Check printed package date.",
             message="Packaged product detected. Printed expiry date required.",
             analyzed_by="Smart Classifier",
@@ -1574,6 +1659,8 @@ def classify_food(phrase: str) -> ClassifyResponse:
             category=cat,
             shelf_life_days=None if needs_date else days,
             requires_expiry_date=needs_date,
+            storage_tip_en="Store in a cool dry place or refrigerate as appropriate.",
+            storage_tip_hi="उचित तरीके से ठंडी और सूखी जगह पर रखें या फ्रिज में रखें।",
             storage_tip="Store in a cool dry place or refrigerate as appropriate.",
             message="Classified via FridgeInventory database.",
             analyzed_by="Food Knowledge Base",
@@ -1588,6 +1675,8 @@ def classify_food(phrase: str) -> ClassifyResponse:
         category="not_food",
         shelf_life_days=None,
         requires_expiry_date=False,
+        storage_tip_en="",
+        storage_tip_hi="",
         storage_tip="",
         message=f"All AI services (Groq, Gemini, OpenRouter) are unreachable. Could not safely identify '{clean_phrase}'. Please check connection or enter item manually.",
         message_hi=f"सभी AI मॉडल (Groq, Gemini, OpenRouter) अनुपलब्ध हैं। '{clean_phrase}' की पहचान नहीं हो सकी। कृपया मैन्युअल रूप से जोड़ें।",
@@ -1600,6 +1689,14 @@ def classify_food(phrase: str) -> ClassifyResponse:
 PHOTO_CLASSIFY_PROMPT = """You are an expert culinary AI and food safety inspector for an Indian household smart refrigerator application (FridgeInventory).
 Analyze this food/grocery photo carefully.
 
+CRITICAL MANDATORY CONSTRAINTS:
+1. ABSOLUTELY ZERO EMOJIS: Do NOT output any emojis, smileys, icons, or pictograms in ANY string field. Output plain text only.
+2. STRICT LANGUAGE PURITY & SEPARATION:
+   - All English fields (`name_en`, `storage_tip_en`, `message`) MUST be 100% pure English text using Latin alphabet. Never include Hindi words, Hinglish slang, or Devanagari characters in English fields.
+   - All Hindi fields (`name_hi`, `storage_tip_hi`) MUST be 100% pure Hindi in Devanagari script (हिंदी लिपि). Absolutely ZERO English words, Latin alphabet characters, or Hinglish text leaks (e.g., NEVER write "Refrigerator के vegetable drawer में रखें"; write pure Hindi like "फ्रिज के सब्जी वाले दराज में रखें" or "वायुरोधी डिब्बे में रखें").
+3. STRUCTURAL SEPARATION:
+   - You MUST separate storage tips into two distinct JSON keys for each item: `storage_tip_en` (pure English) and `storage_tip_hi` (pure Hindi Devanagari).
+
 Instructions:
 1. Identify all distinct food items, produce, groceries, cooked dishes, snacks, or beverages present in the photo.
 2. If the photo does NOT contain food (e.g., electronic gadget, toy, furniture, human, animal, medicine, cleaner, document):
@@ -1607,8 +1704,8 @@ Instructions:
 3. If it IS food:
    - Set is_food=true.
    - For EACH food item detected:
-     * Provide standard English name in `name_en` (e.g. "Paneer Butter Masala", "Fresh Tomato", "Aloo Paratha", "Apples", "Cooked Dal", "Lays Chips", "Amul Butter").
-     * Provide Hindi translation in Devanagari script in `name_hi` (e.g. "पनीर बटर मसाला", "टमाटर", "आलू पराठा", "सेब", "पकी हुई दाल", "लेज़ चिप्स", "अमुल मक्खन").
+     * Provide standard English name in `name_en` (e.g. "Paneer Butter Masala", "Fresh Tomato", "Aloo Paratha", "Apples", "Cooked Dal", "Lays Chips", "Amul Butter"). Must be 100% English, NO emojis.
+     * Provide Hindi translation in Devanagari script in `name_hi` (e.g. "पनीर बटर मसाला", "ताज़ा टमाटर", "आलू पराठा", "सेब", "पकी हुई दाल", "लेज़ चिप्स", "अमुल मक्खन"). Must be 100% Devanagari script, NO emojis, NO Latin characters.
      * Categorize into one of: 'dairy', 'produce', 'vegetable', 'fruit', 'cooked_dish', 'meat_fish_egg', 'grain_pulse_flour', 'snack_bakery', 'beverage', 'spice_condiment', 'packaged_grocery', 'oil_sugar_fat'.
      * Determine `requires_expiry_date`:
        - Set requires_expiry_date=true ONLY for commercial sealed manufactured packaged snacks/cans/bottles that have printed manufacturer expiration dates.
@@ -1616,7 +1713,8 @@ Instructions:
      * Determine `shelf_life_days`:
        - If requires_expiry_date=false: Accurate estimated refrigerator shelf life in days from today (e.g. freshly cooked dal/curry/rice: 2 days, fresh milk: 2 days, paneer: 3 days, leafy greens: 3 days, apples: 21 days, eggs: 21 days).
        - If requires_expiry_date=true: Set shelf_life_days=0.
-     * Provide practical Indian household refrigerator `storage_tip` (e.g. "Keep refrigerated in an airtight container. Consume within 2 days.").
+     * Provide practical refrigerator `storage_tip_en` in 100% pure English text without emojis (e.g. "Keep refrigerated in an airtight container. Consume within 2 days.").
+     * Provide practical refrigerator `storage_tip_hi` in 100% pure Hindi Devanagari script without emojis (e.g. "वायुरोधी डिब्बे में फ्रिज में रखें। दो दिनों के भीतर उपयोग करें।").
 """
 
 def classify_food_photo(
@@ -1676,6 +1774,8 @@ def classify_food_photo(
                             category="not_food",
                             shelf_life_days=None,
                             requires_expiry_date=False,
+                            storage_tip_en="",
+                            storage_tip_hi="",
                             storage_tip="",
                             message=verdict.message or "The photo does not appear to contain an edible food or kitchen grocery item.",
                             analyzed_by="Gemini Vision AI",
@@ -1696,6 +1796,8 @@ def classify_food_photo(
                             category="not_food",
                             shelf_life_days=None,
                             requires_expiry_date=False,
+                            storage_tip_en="",
+                            storage_tip_hi="",
                             storage_tip="",
                             message="The photo does not appear to contain an edible food or kitchen grocery item.",
                             analyzed_by="Gemini Vision AI",
@@ -1710,13 +1812,17 @@ def classify_food_photo(
 
                     for it in valid_items:
                         cat_str = it.category.value if hasattr(it.category, "value") else str(it.category)
+                        tip_en = strip_emojis(it.storage_tip_en or "Store refrigerated in an airtight container.")
+                        tip_hi = strip_emojis(it.storage_tip_hi or "वायुरोधी डिब्बे में फ्रिज में रखें।")
                         item_dict = {
-                            "name_en": it.name_en,
-                            "name_hi": it.name_hi or it.name_en,
+                            "name_en": strip_emojis(it.name_en),
+                            "name_hi": strip_emojis(it.name_hi or it.name_en),
                             "category": cat_str,
                             "shelf_life_days": it.shelf_life_days if not it.requires_expiry_date else None,
                             "requires_expiry_date": it.requires_expiry_date,
-                            "storage_tip": it.storage_tip or "Store refrigerated.",
+                            "storage_tip_en": tip_en,
+                            "storage_tip_hi": tip_hi,
+                            "storage_tip": tip_en,
                         }
                         all_items_dicts.append(item_dict)
 
@@ -1725,13 +1831,15 @@ def classify_food_photo(
                             if fridge_id:
                                 try:
                                     item_create = InventoryItemCreate(
-                                        name_en=it.name_en,
-                                        name_hi=it.name_hi or it.name_en,
+                                        name_en=strip_emojis(it.name_en),
+                                        name_hi=strip_emojis(it.name_hi or it.name_en),
                                         category=cat_str,
                                         shelf_life_days=it.shelf_life_days if it.shelf_life_days > 0 else 2,
                                         requires_expiry_date=False,
                                         expiry_date=None,
-                                        storage_tip=it.storage_tip or "Keep refrigerated in an airtight container.",
+                                        storage_tip=tip_en,
+                                        storage_tip_en=tip_en,
+                                        storage_tip_hi=tip_hi,
                                     )
                                     saved = save_fridge_inventory_item(fridge_id, item_create, client_tz=client_tz)
                                     auto_added.append(saved)
@@ -1746,6 +1854,8 @@ def classify_food_photo(
 
                     primary = valid_items[0]
                     cat_primary = primary.category.value if hasattr(primary.category, "value") else str(primary.category)
+                    primary_tip_en = strip_emojis(primary.storage_tip_en or "Keep refrigerated in an airtight container.")
+                    primary_tip_hi = strip_emojis(primary.storage_tip_hi or "वायुरोधी डिब्बे में फ्रिज में रखें।")
 
                     if auto_added and needs_expiry:
                         msg = f"Auto-added {len(auto_added)} fresh item(s) to fridge. {len(needs_expiry)} item(s) require package expiry date."
@@ -1758,12 +1868,14 @@ def classify_food_photo(
 
                     return ClassifyResponse(
                         is_food=True,
-                        name_en=primary.name_en,
-                        name_hi=primary.name_hi or primary.name_en,
+                        name_en=strip_emojis(primary.name_en),
+                        name_hi=strip_emojis(primary.name_hi or primary.name_en),
                         category=cat_primary,
                         shelf_life_days=None if primary.requires_expiry_date else primary.shelf_life_days,
                         requires_expiry_date=primary.requires_expiry_date,
-                        storage_tip=primary.storage_tip or "Keep refrigerated in an airtight container.",
+                        storage_tip_en=primary_tip_en,
+                        storage_tip_hi=primary_tip_hi,
+                        storage_tip=primary_tip_en,
                         analyzed_by="Gemini Vision AI",
                         items=all_items_dicts,
                         auto_added=auto_added,
@@ -1780,7 +1892,7 @@ def classify_food_photo(
         for vmodel in GROQ_VISION_MODELS:
             try:
                 logger.info(f"Attempting Groq Vision classification using {vmodel}...")
-                prompt_vision = PHOTO_CLASSIFY_PROMPT + "\n\nOutput strictly valid JSON with root object having keys: is_food (bool), items (list of objects with name_en, name_hi, category, shelf_life_days, requires_expiry_date, storage_tip), message (str)."
+                prompt_vision = PHOTO_CLASSIFY_PROMPT + "\n\nOutput strictly valid JSON with root object having keys: is_food (bool), items (list of objects with name_en, name_hi, category, shelf_life_days, requires_expiry_date, storage_tip_en, storage_tip_hi), message (str)."
                 g_res = groq_client.chat.completions.create(
                     model=vmodel,
                     messages=[
@@ -1805,26 +1917,32 @@ def classify_food_photo(
                         all_items_dicts: List[dict] = []
                         for it in valid_items:
                             cat_str = it.category.value if hasattr(it.category, "value") else str(it.category)
+                            tip_en = strip_emojis(it.storage_tip_en or "Store refrigerated in an airtight container.")
+                            tip_hi = strip_emojis(it.storage_tip_hi or "वायुरोधी डिब्बे में फ्रिज में रखें।")
                             item_dict = {
-                                "name_en": it.name_en,
-                                "name_hi": it.name_hi or it.name_en,
+                                "name_en": strip_emojis(it.name_en),
+                                "name_hi": strip_emojis(it.name_hi or it.name_en),
                                 "category": cat_str,
                                 "shelf_life_days": it.shelf_life_days if not it.requires_expiry_date else None,
                                 "requires_expiry_date": it.requires_expiry_date,
-                                "storage_tip": it.storage_tip or "Store refrigerated.",
+                                "storage_tip_en": tip_en,
+                                "storage_tip_hi": tip_hi,
+                                "storage_tip": tip_en,
                             }
                             all_items_dicts.append(item_dict)
                             if not it.requires_expiry_date:
                                 if fridge_id:
                                     try:
                                         item_create = InventoryItemCreate(
-                                            name_en=it.name_en,
-                                            name_hi=it.name_hi or it.name_en,
+                                            name_en=strip_emojis(it.name_en),
+                                            name_hi=strip_emojis(it.name_hi or it.name_en),
                                             category=cat_str,
                                             shelf_life_days=it.shelf_life_days if it.shelf_life_days > 0 else 2,
                                             requires_expiry_date=False,
                                             expiry_date=None,
-                                            storage_tip=it.storage_tip or "Keep refrigerated in an airtight container.",
+                                            storage_tip=tip_en,
+                                            storage_tip_en=tip_en,
+                                            storage_tip_hi=tip_hi,
                                         )
                                         saved = save_fridge_inventory_item(fridge_id, item_create, client_tz=client_tz)
                                         auto_added.append(saved)
@@ -1837,14 +1955,18 @@ def classify_food_photo(
 
                         primary = valid_items[0]
                         cat_primary = primary.category.value if hasattr(primary.category, "value") else str(primary.category)
+                        primary_tip_en = strip_emojis(primary.storage_tip_en or "Keep refrigerated in an airtight container.")
+                        primary_tip_hi = strip_emojis(primary.storage_tip_hi or "वायुरोधी डिब्बे में फ्रिज में रखें।")
                         return ClassifyResponse(
                             is_food=True,
-                            name_en=primary.name_en,
-                            name_hi=primary.name_hi or primary.name_en,
+                            name_en=strip_emojis(primary.name_en),
+                            name_hi=strip_emojis(primary.name_hi or primary.name_en),
                             category=cat_primary,
                             shelf_life_days=None if primary.requires_expiry_date else primary.shelf_life_days,
                             requires_expiry_date=primary.requires_expiry_date,
-                            storage_tip=primary.storage_tip or "Keep refrigerated.",
+                            storage_tip_en=primary_tip_en,
+                            storage_tip_hi=primary_tip_hi,
+                            storage_tip=primary_tip_en,
                             message=f"Photo analyzed via Groq Vision ({vmodel}).",
                             analyzed_by=f"Groq Vision ({vmodel})",
                             items=all_items_dicts,
@@ -1857,7 +1979,7 @@ def classify_food_photo(
 
     # 2c. Fallback: OpenRouter Vision Models Cascade
     if get_openrouter_api_key() and HAVE_REQUESTS and requests is not None:
-        prompt_vision = PHOTO_CLASSIFY_PROMPT + "\n\nOutput strictly valid JSON with root object having keys: is_food (bool), items (list of objects with name_en, name_hi, category, shelf_life_days, requires_expiry_date, storage_tip), message (str)."
+        prompt_vision = PHOTO_CLASSIFY_PROMPT + "\n\nOutput strictly valid JSON with root object having keys: is_food (bool), items (list of objects with name_en, name_hi, category, shelf_life_days, requires_expiry_date, storage_tip_en, storage_tip_hi), message (str)."
         or_vis = query_openrouter_chat(
             messages=[
                 {
@@ -1882,26 +2004,32 @@ def classify_food_photo(
                         all_items_dicts: List[dict] = []
                         for it in valid_items:
                             cat_str = it.category.value if hasattr(it.category, "value") else str(it.category)
+                            tip_en = strip_emojis(it.storage_tip_en or "Store refrigerated in an airtight container.")
+                            tip_hi = strip_emojis(it.storage_tip_hi or "वायुरोधी डिब्बे में फ्रिज में रखें।")
                             item_dict = {
-                                "name_en": it.name_en,
-                                "name_hi": it.name_hi or it.name_en,
+                                "name_en": strip_emojis(it.name_en),
+                                "name_hi": strip_emojis(it.name_hi or it.name_en),
                                 "category": cat_str,
                                 "shelf_life_days": it.shelf_life_days if not it.requires_expiry_date else None,
                                 "requires_expiry_date": it.requires_expiry_date,
-                                "storage_tip": it.storage_tip or "Store refrigerated.",
+                                "storage_tip_en": tip_en,
+                                "storage_tip_hi": tip_hi,
+                                "storage_tip": tip_en,
                             }
                             all_items_dicts.append(item_dict)
                             if not it.requires_expiry_date:
                                 if fridge_id:
                                     try:
                                         item_create = InventoryItemCreate(
-                                            name_en=it.name_en,
-                                            name_hi=it.name_hi or it.name_en,
+                                            name_en=strip_emojis(it.name_en),
+                                            name_hi=strip_emojis(it.name_hi or it.name_en),
                                             category=cat_str,
                                             shelf_life_days=it.shelf_life_days if it.shelf_life_days > 0 else 2,
                                             requires_expiry_date=False,
                                             expiry_date=None,
-                                            storage_tip=it.storage_tip or "Keep refrigerated in an airtight container.",
+                                            storage_tip=tip_en,
+                                            storage_tip_en=tip_en,
+                                            storage_tip_hi=tip_hi,
                                         )
                                         saved = save_fridge_inventory_item(fridge_id, item_create, client_tz=client_tz)
                                         auto_added.append(saved)
@@ -1914,14 +2042,18 @@ def classify_food_photo(
 
                         primary = valid_items[0]
                         cat_primary = primary.category.value if hasattr(primary.category, "value") else str(primary.category)
+                        primary_tip_en = strip_emojis(primary.storage_tip_en or "Keep refrigerated in an airtight container.")
+                        primary_tip_hi = strip_emojis(primary.storage_tip_hi or "वायुरोधी डिब्बे में फ्रिज में रखें।")
                         return ClassifyResponse(
                             is_food=True,
-                            name_en=primary.name_en,
-                            name_hi=primary.name_hi or primary.name_en,
+                            name_en=strip_emojis(primary.name_en),
+                            name_hi=strip_emojis(primary.name_hi or primary.name_en),
                             category=cat_primary,
                             shelf_life_days=None if primary.requires_expiry_date else primary.shelf_life_days,
                             requires_expiry_date=primary.requires_expiry_date,
-                            storage_tip=primary.storage_tip or "Keep refrigerated.",
+                            storage_tip_en=primary_tip_en,
+                            storage_tip_hi=primary_tip_hi,
+                            storage_tip=primary_tip_en,
                             message="Photo analyzed via OpenRouter Vision.",
                             analyzed_by="OpenRouter Vision",
                             items=all_items_dicts,
@@ -1940,6 +2072,8 @@ def classify_food_photo(
         category="not_food",
         shelf_life_days=None,
         requires_expiry_date=False,
+        storage_tip_en="",
+        storage_tip_hi="",
         storage_tip="",
         message="AI could not identify food in this photo or AI vision models were unreachable. Please retake the photo clearly or enter item details manually.",
         message_hi="AI इस फ़ोटो में भोजन की पहचान नहीं कर सका या मॉडल अनुपलब्ध हैं। कृपया साफ़ फ़ोटो लें या मैन्युअल रूप से दर्ज करें।",
@@ -2650,12 +2784,34 @@ def sanitize_recipe_fields(recipe: RescueRecipe, query: str = "") -> RescueRecip
             cleaned_steps_hi.append(s_clean)
         recipe.steps_hi = cleaned_steps_hi
 
+    # Completely ban/strip emojis from all recipe text fields
+    recipe.recipe_name = strip_emojis(recipe.recipe_name)
+    recipe.recipe_name_hi = strip_emojis(recipe.recipe_name_hi)
+    recipe.meal_type = strip_emojis(recipe.meal_type)
+    recipe.meal_type_hi = strip_emojis(recipe.meal_type_hi)
+    recipe.pairing_notes = strip_emojis(recipe.pairing_notes)
+    recipe.pairing_notes_hi = strip_emojis(recipe.pairing_notes_hi)
+    recipe.chef_tip = strip_emojis(recipe.chef_tip)
+    recipe.chef_tip_hi = strip_emojis(recipe.chef_tip_hi)
+    recipe.steps = [strip_emojis(s) for s in recipe.steps]
+    recipe.steps_hi = [strip_emojis(s) for s in recipe.steps_hi]
+    recipe.ingredients_used = [strip_emojis(s) for s in recipe.ingredients_used]
+    recipe.ingredients_used_hi = [strip_emojis(s) for s in recipe.ingredients_used_hi]
+    recipe.pantry_items_needed = [strip_emojis(s) for s in recipe.pantry_items_needed]
+    recipe.pantry_items_needed_hi = [strip_emojis(s) for s in recipe.pantry_items_needed_hi]
+
     return recipe
 
 
 RESCUE_PROMPT_TEMPLATE = """You are an expert master chef and zero-waste kitchen culinary genius for 'FridgeInventory'.
 A household has these specific expiring items or leftovers that MUST be used today to prevent food waste:
 {ingredients}
+
+CRITICAL MANDATORY CONSTRAINTS:
+1. ABSOLUTELY ZERO EMOJIS: Do NOT output any emojis, smileys, symbols, or pictograms in ANY string field. Output clean plain text only.
+2. STRICT LANGUAGE PURITY & SEPARATION:
+   - All English fields (`recipe_name`, `meal_type`, `pairing_notes`, `ingredients_used`, `corrected_ingredients`, `pantry_items_needed`, `steps`, `chef_tip`) MUST be 100% pure English text using the Latin alphabet. Never mix Hindi words, Hinglish transliterations, or Devanagari characters into English fields.
+   - All Hindi fields (`recipe_name_hi`, `meal_type_hi`, `pairing_notes_hi`, `ingredients_used_hi`, `pantry_items_needed_hi`, `steps_hi`, `chef_tip_hi`) MUST be 100% pure Hindi in Devanagari script (हिंदी लिपि). Absolutely ZERO English words, Latin alphabet characters, or Hinglish leaks (e.g., translate culinary terms like "pan", "boil", "oil", "salt" into proper Hindi words in Devanagari script).
 
 CRITICAL CULINARY RULES & PAIRING INTELLIGENCE:
 1. DETECT INCOMPATIBLE INGREDIENTS OR DRINK + FOOD COMBINATIONS:
@@ -2669,29 +2825,29 @@ CRITICAL CULINARY RULES & PAIRING INTELLIGENCE:
 2. HARMONIOUS SINGLE-DISH COMBINATIONS:
    - If all ingredients naturally cook together (e.g., potatoes, onions, tomatoes, spinach, paneer, vegetables, dal, rice), set meal_type to 'Homestyle Meal' (meal_type_hi: 'घर का भोजन') or 'Savory Food' (meal_type_hi: 'स्वादिष्ट भोजन') and create one delicious, authentic, easy Indian dish (curry, dry sabzi, paratha, pulao, or snacks).
    - If only beverage/drink ingredients are provided (e.g. milk, chocolate, bananas, honey), set meal_type to 'Beverage / Drink' (meal_type_hi: 'ताज़ा पेय / शेक') and make an extraordinary drink.
-3. COMPLETE DUAL-LANGUAGE OUTPUT (ENGLISH & AUTHENTIC HINDI):
+3. COMPLETE DUAL-LANGUAGE OUTPUT (PURE ENGLISH & PURE HINDI DEVANAGARI):
    - You MUST provide every single field in English AND in authentic, natural Hindi (Devanagari script)!
    - 'steps_hi' MUST contain every step of the cooking instructions translated into fluent, natural Hindi. Do NOT leave steps_hi empty or in English!
    - 'pantry_items_needed_hi' MUST list all required pantry spices and items in Hindi (e.g. '1 चम्मच जीरा', 'स्वादानुसार नमक', 'हल्दी पाउडर').
    - 'chef_tip_hi' MUST be a traditional Indian culinary tip ('दादी माँ का नुस्खा').
 
 Output Schema:
-- recipe_name in English
-- recipe_name_hi in Hindi (Devanagari script)
+- recipe_name in 100% English (NO emojis)
+- recipe_name_hi in 100% Hindi Devanagari script (NO emojis)
 - meal_type ('Food & Drink Combo', 'Savory Food', 'Beverage / Drink', or 'Homestyle Meal')
 - meal_type_hi in Hindi ('भोजन और पेय कॉम्बो', 'स्वादिष्ट भोजन', 'ताज़ा पेय / शेक', or 'घर का भोजन')
-- pairing_notes in English
-- pairing_notes_hi in Hindi (Devanagari script)
+- pairing_notes in 100% English (NO emojis)
+- pairing_notes_hi in 100% Hindi Devanagari script (NO emojis)
 - prep_time_minutes (realistic integer, 10 to 30 mins)
-- ingredients_used (list)
-- ingredients_used_hi (list in Hindi)
-- corrected_ingredients (list)
+- ingredients_used (list in English)
+- ingredients_used_hi (list in Hindi Devanagari)
+- corrected_ingredients (list in English)
 - pantry_items_needed (list in English)
 - pantry_items_needed_hi (list in Hindi with quantities)
-- steps (JSON array of individual strings with exactly ONE cooking step per string. DO NOT combine or concatenate all steps into one single string!)
-- steps_hi (JSON array of individual strings with ONE cooking step per string in natural Hindi in Devanagari script)
-- chef_tip (pro zero-waste tip in English)
-- chef_tip_hi (authentic Indian kitchen tip in Hindi: 'दादी माँ का नुस्खा')
+- steps (JSON array of individual strings with exactly ONE cooking step per string, pure English, NO emojis)
+- steps_hi (JSON array of individual strings with ONE cooking step per string in 100% natural Hindi in Devanagari script, NO emojis)
+- chef_tip (pro zero-waste tip in English, NO emojis)
+- chef_tip_hi (authentic Indian kitchen tip in Hindi: 'दादी माँ का नुस्खा', NO emojis)
 """
 
 def generate_rescue_recipe(items: List[str]) -> RescueRecipe:
@@ -2832,7 +2988,11 @@ def generate_rescue_recipe(items: List[str]) -> RescueRecipe:
                     messages=[
                         {
                             "role": "system",
-                            "content": "You are an expert chef specializing in Indian home cooking, pairing intelligence, and zero-waste recipes. Output strictly valid JSON conforming to the recipe schema with English and Hindi fields."
+                            "content": (
+                                "You are an expert chef specializing in Indian home cooking, pairing intelligence, and zero-waste recipes. "
+                                "Never output emojis. English fields must be 100% pure English text, and Hindi fields must be 100% pure Devanagari script without mixed alphabet leaks. "
+                                "Output strictly valid JSON conforming to the recipe schema."
+                            )
                         },
                         {
                             "role": "user",
@@ -2880,7 +3040,14 @@ def generate_rescue_recipe(items: List[str]) -> RescueRecipe:
     if get_openrouter_api_key():
         or_recipe = query_openrouter_chat(
             messages=[
-                {"role": "system", "content": "You are an expert chef specializing in Indian home cooking, pairing intelligence, and zero-waste recipes. Output strictly valid JSON conforming to the recipe schema with English and Hindi fields."},
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an expert chef specializing in Indian home cooking, pairing intelligence, and zero-waste recipes. "
+                        "Never output emojis. English fields must be 100% pure English text, and Hindi fields must be 100% pure Devanagari script without mixed alphabet leaks. "
+                        "Output strictly valid JSON conforming to the recipe schema."
+                    )
+                },
                 {"role": "user", "content": RESCUE_PROMPT_TEMPLATE.format(ingredients=", ".join(clean_items))}
             ],
             models=OPENROUTER_TEXT_MODELS,
@@ -3443,7 +3610,9 @@ def api_process_command(payload: CommandRequest, request: Request, fridge: Optio
                     shelf_life_days=days,
                     requires_expiry_date=False,
                     expiry_date=exp_str,
-                    storage_tip=c.storage_tip
+                    storage_tip=c.storage_tip_en or c.storage_tip,
+                    storage_tip_en=c.storage_tip_en,
+                    storage_tip_hi=c.storage_tip_hi,
                 )
                 if fid:
                     saved_item = save_fridge_inventory_item(fid, item_create, client_tz=client_tz_str)
@@ -3461,7 +3630,9 @@ def api_process_command(payload: CommandRequest, request: Request, fridge: Optio
                         "is_expired": False,
                         "is_expiring_soon": days <= 2,
                         "requires_expiry_date": False,
-                        "storage_tip": c.storage_tip,
+                        "storage_tip": c.storage_tip_en or c.storage_tip,
+                        "storage_tip_en": c.storage_tip_en,
+                        "storage_tip_hi": c.storage_tip_hi,
                         "last_synced_at": now_local.strftime("%Y-%m-%d %H:%M:%S")
                     })
 
@@ -7540,7 +7711,15 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         }
         if (!res.ok) throw new Error('Failed to load inventory');
         const invPayload = await res.json();
-        inventory = Array.isArray(invPayload) ? invPayload : [];
+        const rawItems = Array.isArray(invPayload) ? invPayload : [];
+        inventory = [];
+        const itemMap = new Map();
+        for (const item of rawItems) {
+          if (item && item.id != null) {
+            itemMap.set(String(item.id), item);
+          }
+        }
+        inventory = Array.from(itemMap.values());
         // Save to offline cache for disconnected access
         try {
           localStorage.setItem('fi_cached_inventory', JSON.stringify(inventory));
@@ -7553,7 +7732,15 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         const cached = localStorage.getItem('fi_cached_inventory');
         if (cached) {
           try {
-            inventory = JSON.parse(cached);
+            const rawCached = JSON.parse(cached);
+            inventory = [];
+            const cachedMap = new Map();
+            (Array.isArray(rawCached) ? rawCached : []).forEach(item => {
+              if (item && item.id != null) {
+                cachedMap.set(String(item.id), item);
+              }
+            });
+            inventory = Array.from(cachedMap.values());
             renderInventory();
             updateStats();
             checkLocalOfflineExpiryAlerts();
@@ -7746,7 +7933,12 @@ HTML_CONTENT = r"""<!DOCTYPE html>
                 <span>${currentLang === 'hi' ? 'समाप्त:' : 'Expires:'} <b class="text-stone-700 dark:text-stone-300 font-semibold">${item.expiry_date}</b></span>
               </div>
             </div>
-            ${item.storage_tip ? `<div class="text-stone-600 dark:text-stone-300 bg-stone-50/80 dark:bg-stone-800/60 p-2 rounded-xl border border-stone-100 dark:border-stone-700/60 leading-relaxed text-[11px] flex items-start gap-1.5"><span class="text-amber-500 shrink-0 text-xs">💡</span><span class="flex-1">${item.storage_tip}</span></div>` : ''}
+            ${(() => {
+              const tip = currentLang === 'hi'
+                ? (item.storage_tip_hi || item.storage_tip_en || item.storage_tip || '')
+                : (item.storage_tip_en || item.storage_tip || '');
+              return tip ? `<div class="text-stone-600 dark:text-stone-300 bg-stone-50/80 dark:bg-stone-800/60 p-2 rounded-xl border border-stone-100 dark:border-stone-700/60 leading-relaxed text-[11px] flex items-start gap-1.5"><span class="text-amber-500 shrink-0 text-xs">💡</span><span class="flex-1">${tip}</span></div>` : '';
+            })()}
           </div>
         </div>
 
@@ -7830,8 +8022,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
       modalNameEn.textContent = result.name_en;
       modalNameHi.textContent = result.name_hi;
-      modalCatBadge.textContent = result.category.replace(/_/g, ' ');
-      modalStorageTip.textContent = result.storage_tip || 'Keep in a cool dry spot or refrigerated.';
+      const tipText = currentLang === 'hi'
+        ? (result.storage_tip_hi || result.storage_tip_en || result.storage_tip || 'ठंडी और सूखी जगह पर या फ्रिज में रखें।')
+        : (result.storage_tip_en || result.storage_tip || 'Keep in a cool dry spot or refrigerated.');
+      modalStorageTip.textContent = tipText;
 
       if (modalQueuePill) {
         if (totalCount > 1 && currentIdx > 0) {
@@ -7931,7 +8125,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           shelf_life_days: pendingModalItem.shelf_life_days,
           requires_expiry_date: pendingModalItem.requires_expiry_date,
           expiry_date: expiry,
-          storage_tip: pendingModalItem.storage_tip
+          storage_tip_en: pendingModalItem.storage_tip_en || pendingModalItem.storage_tip || '',
+          storage_tip_hi: pendingModalItem.storage_tip_hi || '',
+          storage_tip: pendingModalItem.storage_tip_en || pendingModalItem.storage_tip || ''
         };
 
         const url = currentFridge ? `/api/inventory?fridge=${encodeURIComponent(currentFridge)}` : '/api/inventory';
@@ -7947,7 +8143,16 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
         if (!res.ok) throw new Error('Could not add item');
         const saved = await res.json();
-        inventory.unshift(saved);
+        if (saved && saved.id != null) {
+          const existingIdx = inventory.findIndex(i => String(i.id) === String(saved.id));
+          if (existingIdx >= 0) {
+            inventory[existingIdx] = saved;
+          } else {
+            inventory.unshift(saved);
+          }
+        } else {
+          inventory.unshift(saved);
+        }
         try { localStorage.setItem('fi_cached_inventory', JSON.stringify(inventory)); } catch(e){}
         renderInventory();
         updateStats();
@@ -7983,7 +8188,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         shelf_life_days: classification.shelf_life_days,
         requires_expiry_date: false,
         expiry_date: expDate.toISOString().split('T')[0],
-        storage_tip: classification.storage_tip,
+        storage_tip_en: classification.storage_tip_en || classification.storage_tip || '',
+        storage_tip_hi: classification.storage_tip_hi || '',
+        storage_tip: classification.storage_tip_en || classification.storage_tip || '',
       };
 
       try {
@@ -8000,14 +8207,26 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
         if (!res.ok) throw new Error('Could not add item');
         const saved = await res.json();
-        inventory.unshift(saved);
+        if (saved && saved.id != null) {
+          const existingIdx = inventory.findIndex(i => String(i.id) === String(saved.id));
+          if (existingIdx >= 0) {
+            inventory[existingIdx] = saved;
+          } else {
+            inventory.unshift(saved);
+          }
+        } else {
+          inventory.unshift(saved);
+        }
         try { localStorage.setItem('fi_cached_inventory', JSON.stringify(inventory)); } catch(e){}
         renderInventory();
         updateStats();
         document.getElementById('cmd-input').value = '';
 
         const displayName = currentLang === 'hi' ? (saved.name_hi || saved.name_en) : saved.name_en;
-        const tipText = classification.storage_tip ? ` | ${classification.storage_tip}` : '';
+        const tipVal = currentLang === 'hi'
+          ? (classification.storage_tip_hi || classification.storage_tip_en || classification.storage_tip || '')
+          : (classification.storage_tip_en || classification.storage_tip || '');
+        const tipText = tipVal ? ` | ${tipVal}` : '';
         showToast(`Added ${displayName} (${days}d shelf-life)${tipText}`, 'success');
       } catch (err) {
         showToast('Error saving item', 'error');
@@ -8113,7 +8332,17 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         else if (data.action === 'multi_add') {
           // Fresh items made today were already persisted on the backend
           if (data.auto_added && data.auto_added.length > 0) {
-            data.auto_added.forEach(item => inventory.unshift(item));
+            const existingIds = new Set(inventory.map(i => String(i.id)));
+            data.auto_added.forEach(item => {
+              if (item && item.id != null) {
+                if (!existingIds.has(String(item.id))) {
+                  inventory.unshift(item);
+                  existingIds.add(String(item.id));
+                }
+              } else if (item) {
+                inventory.unshift(item);
+              }
+            });
             try { localStorage.setItem('fi_cached_inventory', JSON.stringify(inventory)); } catch(e){}
             renderInventory();
             updateStats();
@@ -9063,6 +9292,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         ? `<span class="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-bold text-[10px]">Yes (Packaged)</span>`
         : `<span class="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-bold text-[10px]">No (Automatic Expiry)</span>`;
 
+      const activeAdvice = currentLang === 'hi'
+        ? (data.storage_tip_hi || data.storage_tip_en || data.storage_tip || 'फ्रिज में एयरटाइट डिब्बे में रखें।')
+        : (data.storage_tip_en || data.storage_tip || 'Keep refrigerated in an airtight container.');
+
       // Safe JSON encoding for onclick attribute
       const itemPayload = {
         name_en: displayNameEn,
@@ -9070,7 +9303,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         category: displayCategory,
         shelf_life_days: shelfDays || 2,
         requires_expiry_date: !!data.requires_expiry_date,
-        storage_tip: data.storage_tip || ''
+        storage_tip_en: data.storage_tip_en || data.storage_tip || '',
+        storage_tip_hi: data.storage_tip_hi || '',
+        storage_tip: data.storage_tip_en || data.storage_tip || ''
       };
       const encodedPayload = encodeURIComponent(JSON.stringify(itemPayload));
 
@@ -9145,7 +9380,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               <svg class="w-3 h-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
               <span>Storage Advice</span>
             </div>
-            <div class="text-stone-700 dark:text-stone-300 text-xs leading-relaxed">${data.storage_tip || 'Keep refrigerated in an airtight container.'}</div>
+            <div class="text-stone-700 dark:text-stone-300 text-xs leading-relaxed">${activeAdvice}</div>
           </div>
 
           <!-- Action Buttons: 1-Tap Add to Fridge + Close Result Button -->
@@ -9196,7 +9431,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             category: item.category || 'cooked_dish',
             shelf_life_days: item.shelf_life_days || 2,
             requires_expiry_date: item.requires_expiry_date || false,
-            storage_tip: item.storage_tip || ''
+            storage_tip_en: item.storage_tip_en || item.storage_tip || '',
+            storage_tip_hi: item.storage_tip_hi || '',
+            storage_tip: item.storage_tip_en || item.storage_tip || ''
           })
         });
 
@@ -9327,7 +9564,17 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
         // 1. Fresh items without printed expiry date were automatically persisted to DB and returned in auto_added
         if (data.auto_added && data.auto_added.length > 0) {
-          data.auto_added.forEach(item => inventory.unshift(item));
+          const existingIds = new Set(inventory.map(i => String(i.id)));
+          data.auto_added.forEach(item => {
+            if (item && item.id != null) {
+              if (!existingIds.has(String(item.id))) {
+                inventory.unshift(item);
+                existingIds.add(String(item.id));
+              }
+            } else if (item) {
+              inventory.unshift(item);
+            }
+          });
           try { localStorage.setItem('fi_cached_inventory', JSON.stringify(inventory)); } catch(e){}
           renderInventory();
           updateStats();
